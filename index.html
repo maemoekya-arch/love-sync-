@@ -7,8 +7,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
-  import { getDatabase, ref, set, get, update, onValue, onChildAdded, push, onDisconnect } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-database.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getDatabase, ref, set, get, update, onValue, onChildAdded, push, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDM2jU6NsjL2UMTSmrBv93S13Sc62eDCAU",
@@ -23,8 +24,10 @@
 
   const app = initializeApp(firebaseConfig);
   const database = getDatabase(app);
+  const auth = getAuth(app);
+  const googleProvider = new GoogleAuthProvider();
 
-  // Expose Firebase helpers to window so the main script can use them
+  // Expose Firebase helpers to window
   window.FB = {
     ref: (path) => ref(database, path),
     set: (r, v) => set(r, v),
@@ -37,9 +40,18 @@
     off: (r) => { try { r.off && r.off() } catch(e){} }
   };
 
+  // Expose auth functions
+  window.AUTH = {
+    signUp: (email, pass) => createUserWithEmailAndPassword(auth, email, pass),
+    signIn: (email, pass) => signInWithEmailAndPassword(auth, email, pass),
+    google: () => signInWithPopup(auth, googleProvider),
+    signOut: () => signOut(auth),
+    updateProfile: (user, data) => updateProfile(user, data),
+    onAuthStateChanged: (cb) => onAuthStateChanged(auth, cb)
+  };
+
   window.fbReady = true;
-  console.log("✅ Firebase module ready");
-  // Fire any queued setup
+  console.log("✅ Firebase v10 ready");
   if(window._fbQueue) window._fbQueue.forEach(fn => fn());
 </script>
 
@@ -576,9 +588,43 @@ function renderAuth(t){
   }
 }
 function prevSAv(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{sapAv=ev.target.result;const c=document.getElementById('savc');c.innerHTML=`<img src="${ev.target.result}"><div class="cam-b">📷</div><input type="file" id="sav" accept="image/*" onchange="prevSAv(event)">`};r.readAsDataURL(f)}
-function doSignup(){const n=document.getElementById('sname').value.trim();if(!n){alert('Please enter your name!');return}S.name=n;S.avatar=sapAv||'';S.authed=true;if(!S.daysStart)S.daysStart=Date.now();save();closeM('am');launch()}
-function doLogin(){S.authed=true;if(!S.daysStart)S.daysStart=Date.now();save();closeM('am');launch()}
-function doGoogle(){const ns=['Alex','Sam','Jordan','Taylor','Riley','Emma','Liam'];if(!S.name)S.name=ns[Math.floor(Math.random()*ns.length)];S.authed=true;if(!S.daysStart)S.daysStart=Date.now();save();closeM('am');launch()}
+function showAuthErr(msg){let e=document.getElementById('autherr');if(!e){e=document.createElement('p');e.id='autherr';e.style.cssText='color:oklch(0.65 0.25 25);font-size:.8rem;margin-top:.5rem;text-align:center';document.getElementById('ac').appendChild(e)}e.textContent=msg}
+function clearAuthErr(){const e=document.getElementById('autherr');if(e)e.textContent=''}
+async function doSignup(){
+  const n=document.getElementById('sname')?.value.trim();
+  const em=document.getElementById('semail')?.value.trim();
+  const pw=document.getElementById('spw')?.value;
+  clearAuthErr();
+  if(!n){showAuthErr('Please enter your name!');return}
+  if(!em||!pw){showAuthErr('Please enter email and password');return}
+  if(pw.length<6){showAuthErr('Password must be at least 6 characters');return}
+  try{
+    const cred=await window.AUTH.signUp(em,pw);
+    await window.AUTH.updateProfile(cred.user,{displayName:n});
+    S.name=n;S.avatar=sapAv||'';S.authed=true;if(!S.daysStart)S.daysStart=Date.now();save();closeM('am');launch();
+  }catch(e){showAuthErr(e.message.replace('Firebase: ','').replace(/\(.*\)/,''))}
+}
+async function doLogin(){
+  const em=document.querySelector('#ac input[type=email]')?.value.trim();
+  const pw=document.querySelector('#ac input[type=password]')?.value;
+  clearAuthErr();
+  if(!em||!pw){showAuthErr('Please enter your email and password');return}
+  try{
+    const cred=await window.AUTH.signIn(em,pw);
+    if(cred.user.displayName)S.name=cred.user.displayName;
+    S.authed=true;if(!S.daysStart)S.daysStart=Date.now();save();closeM('am');launch();
+  }catch(e){showAuthErr(e.message.replace('Firebase: ','').replace(/\(.*\)/,''))}
+}
+async function doGoogle(){
+  clearAuthErr();
+  try{
+    const cred=await window.AUTH.google();
+    const user=cred.user;
+    if(!S.name&&user.displayName)S.name=user.displayName;
+    if(!S.avatar&&user.photoURL)S.avatar=user.photoURL;
+    S.authed=true;if(!S.daysStart)S.daysStart=Date.now();save();closeM('am');launch();
+  }catch(e){showAuthErr('Google sign-in failed. Make sure pop-ups are allowed. '+e.message.replace('Firebase: ','').replace(/\(.*\)/,''))}
+}
 
 function launch(){
   document.getElementById('sw').classList.remove('active');
@@ -841,7 +887,7 @@ function editName(){const n=prompt('Your name:',S.name||'');if(n?.trim()){S.name
 function editStatus(){const s=prompt('What\'s your vibe right now?',S.status||'');if(s!==null){S.status=s.trim().slice(0,80);save();fbUpdate('users/'+S.pairCode,{status:S.status});renderProfile()}}
 function editDate(){const cur=S.daysStart?new Date(S.daysStart).toISOString().slice(0,10):'';const v=prompt('When did your love story start? (YYYY-MM-DD)',cur);if(!v)return;const t=Date.parse(v);if(!isNaN(t)){S.daysStart=t;save();renderAll()}}
 function installW(){alert('📱 Add to home screen:\n• iPhone: Share → "Add to Home Screen"\n• Android: Menu → "Add to Home Screen"')}
-function resetAll(){if(confirm('Sign out and reset all data?')){fbUpdate('users/'+S.pairCode,{online:false});localStorage.removeItem(KEY);location.reload()}}
+function resetAll(){if(confirm('Sign out and reset all data?')){fbUpdate('users/'+S.pairCode,{online:false});if(window.AUTH)window.AUTH.signOut().catch(()=>{});localStorage.removeItem(KEY);location.reload()}}
 
 // ── BOOT ──
 if(S.authed){
