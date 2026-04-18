@@ -481,7 +481,7 @@ function fbListenPartner(code){
     });
   });
 }
-function fbSendChat(qid,text){
+function fbSendChat(qid,text,from){
   if(!S.paired||!S.pairedCode)return;
   runWhenFbReady(()=>{
     const room=[S.pairCode,S.pairedCode].sort().join('_');
@@ -498,7 +498,7 @@ function fbListenChat(qid){
       const dup=msgs[qid].some(x=>x.time===m.time&&x.text===m.text);
       if(!dup){msgs[qid].push(m);S.messages=msgs;save();renderDiscuss();
         const el=document.getElementById('fmsgs');
-        if(el){el.innerHTML=msgs[qid].map(mg=>`<div class="bub ${mg.isMe?'me':'pt'}"><span style="font-size:.65rem;opacity:.6">${mg.isMe?'You':mg.senderName||'Partner'}</span><br>${mg.text}</div>`).join('');el.scrollTop=el.scrollHeight;}
+        if(el){el.innerHTML=msgs[qid].map(mg=>`<div class="bub ${mg.from==='me'?'me':'pt'}">${mg.text}</div>`).join('');el.scrollTop=el.scrollHeight;}
       }
     });
   });
@@ -715,21 +715,7 @@ function renderCats(){
 function showTab(t){
   document.getElementById('sp').classList.remove('active');document.getElementById('sa').classList.add('active');
   ['home','activities','discuss','profile'].forEach(x=>{document.getElementById('tab-'+x).style.display=x===t?'block':'none';document.getElementById('n-'+x).classList.toggle('active',x===t)});
-  if(t==='discuss')renderDiscuss();
-  if(t==='profile')renderProfile();
-  if(t==='activities')renderActivities();
-}
-function renderActivities(){
-  const h=S.quizHistory||[];
-  const el=document.getElementById('tab-activities');
-  if(!el)return;
-  if(!h.length){el.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;gap:1rem;color:var(--muted);text-align:center;padding:2rem"><span style="font-size:3rem">📊</span><p style="font-weight:600">Complete a quiz to see your history!</p></div>';return;}
-  el.innerHTML='<div style="padding:1rem 1rem 80px"><div style="font-size:.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.75rem">Completed Quizzes — tap to review</div>'+
-  h.map(r=>{
-    const g=TGRAD[QUIZZES.find(q=>q.id===r.id)?.topic]||'rose';
-    const safe=encodeURIComponent(JSON.stringify(r));
-    return'<div class="qcard grad-'+g+'" style="margin-bottom:.75rem" onclick="reviewQuiz(JSON.parse(decodeURIComponent(''+safe+'')))"><div class="cyber"></div><div class="qblob"></div><div class="qem">'+r.emoji+'</div><div class="qi"><div class="qn">'+r.name+'</div><div class="qm"><span class="ftag">'+new Date(r.date).toLocaleDateString()+'</span><span style="font-family:var(--fm)">'+r.total+'Q</span></div></div><div class="qr"><span class="dtag">'+r.pct+'% 💕</span><span class="ntag" style="margin-top:.25rem">Review →</span></div></div>';
-  }).join('')+'</div>';
+  if(t==='discuss')renderDiscuss();if(t==='profile')renderProfile();
 }
 
 // ── QUIZ PLAY ──
@@ -751,9 +737,6 @@ function renderQ(){
     <div class="lrow">
       <button class="lbtn" onclick="pickA('ME',this)"><div class="lav">${avHTML(S.avatar,S.name)}</div><span style="font-size:.85rem;font-weight:600;color:var(--fg)">${S.name||'Me'}</span></button>
       <button class="lbtn" onclick="pickA('PARTNER',this)"><div class="lav" style="background:var(--grad-cyan)">${avHTML(S.partnerAvatar,S.partnerName)}</div><span style="font-size:.85rem;font-weight:600;color:var(--fg)">${S.partnerName||'Partner'}</span></button>
-    <div style="display:flex;gap:.6rem;margin-top:.65rem">
-      <button class="lbtn" style="flex:1;padding:.6rem" onclick="pickA('Both',this)"><span style="font-size:1.2rem">💑</span><br><span style="font-size:.78rem;font-weight:600">Both</span></button>
-      <button class="lbtn" style="flex:1;padding:.6rem" onclick="pickA('Neither',this)"><span style="font-size:1.2rem">🤷</span><br><span style="font-size:.78rem;font-weight:600">Neither</span></button>
     </div>`;
   } else if(fmt==='tot'){
     h+=`<div class="qprompt">⚡ This or That?</div><div class="trow">
@@ -782,33 +765,13 @@ function renderQ(){
   h+=`<div id="rarea"></div></div>`;
   body.innerHTML=h;body.scrollTo(0,0);
 }
-function fetchPartnerAnswer(qi,cb){
-  if(S.paired&&S.pairedCode){
-    runWhenFbReady(()=>{
-      FB.get(FB.ref('quizAnswers/'+S.pairedCode+'/'+CQ.id)).then(snap=>{
-        const d=snap.val();
-        cb((d&&d[qi]!==undefined)?d[qi]:genPt());
-      }).catch(()=>cb(genPt()));
-    });
-  }else{cb(genPt());}
-}
 function pickA(val,btn){
-  // Disable all answer buttons
-  btn.closest('.qa')?.querySelectorAll('.lbtn,.tbtn,.wbtn,.abtn,.nbtn').forEach(b=>b.disabled=true);
-  btn.classList.add('sel');
-  myA[CQi]=val;
-  // Save my answer to Firebase
-  if(S.paired&&S.pairedCode){
-    runWhenFbReady(()=>{
-      FB.update(FB.ref('quizAnswers/'+S.pairCode+'/'+CQ.id),{[CQi]:val,updatedAt:Date.now()});
-    });
-  }
-  // Fetch real partner answer then reveal
-  fetchPartnerAnswer(CQi,(ptVal)=>{
-    ptA[CQi]=ptVal;
-    showReveal(val,ptVal);
-    setTimeout(()=>nextQ(),2200);
-  });
+  const con=btn.closest('.lrow,.trow,.agrid,.wlist,.nrow');
+  if(con)con.querySelectorAll('button').forEach(b=>b.disabled=true);
+  btn.classList.add('sel');myA.push(val);
+  const ptVal=genPt();ptA.push(ptVal);
+  showReveal(val,ptVal);
+  setTimeout(()=>nextQ(),2200);
 }
 function pickOpen(){
   const t=(document.getElementById('oans')?.value||'').trim();myA.push(t||'(shared)');
@@ -837,14 +800,14 @@ function finishQ(){
   const matched=myA.filter((a,i)=>a===ptA[i]).length,pct=Math.round((matched/myA.length)*100);
   if(!S.completed.includes(CQ.id))S.completed.push(CQ.id);
   S.streak=(S.streak||0)+1;S.matchScore=pct;
-  const entry={id:CQ.id,name:CQ.name,emoji:CQ.emoji,fmt:CQ.fmt,date:Date.now(),matched,total:myA.length,pct,myA:[...myA],ptA:[...ptA],qs:[...CQs],myName:S.name||'You',ptName:S.partnerName||'Partner'};
+  const entry={id:CQ.id,name:CQ.name,emoji:CQ.emoji,fmt:CQ.fmt,date:Date.now(),matched,total:myA.length,pct,myA:[...myA],ptA:[...ptA],qs:[...CQs]};
   S.quizHistory=[entry,...(S.quizHistory||[])].slice(0,50);
   if(!msgs[CQ.id])msgs[CQ.id]=[];S.messages=msgs;save();
   document.getElementById('pfill').style.width='100%';
   const items=CQs.map((q,i)=>{const ql=Array.isArray(q)?q.join(' OR '):q;const same=myA[i]===ptA[i];
     return`<div class="aitem"><div class="aq">${ql.length>60?ql.slice(0,60)+'…':ql}</div>
     <div class="achips"><span class="achip ${same?'m':'d'}">${S.name||'You'}: ${(myA[i]||'').slice(0,30)}</span>
-    <span class="achip p">${S.partnerName||'Partner'}: ${String(ptA[i]!==undefined?ptA[i]:'—').slice(0,30)}</span></div></div>`;
+    <span class="achip p">${S.partnerName||'Partner'}: ${(ptA[i]||'').slice(0,30)}</span></div></div>`;
   }).join('');
   document.getElementById('pbody').innerHTML=`<div class="finwrap">
     <span class="finem">${pct>=80?'💞':pct>=50?'💛':'💙'}</span>
@@ -863,35 +826,19 @@ function finishQ(){
 function renderFMsgs(){
   const el=document.getElementById('fmsgs');if(!el)return;
   const m=(msgs||{})[CQ?.id]||[];
-  el.innerHTML=m.length?m.map(mg=>`<div class="bub ${mg.isMe?'me':'pt'}" style="margin-bottom:.3rem"><span style="font-size:.65rem;opacity:.6">${mg.isMe?'You':mg.senderName||'Partner'}</span><br>${mg.text}</div>`).join(''):'<div class="emsg">Start the conversation! 💬</div>';
+  el.innerHTML=m.length?m.map(mg=>`<div class="bub ${mg.from==='me'?'me':'pt'}">${mg.text}</div>`).join(''):'<div class="emsg">Start the conversation! 💬</div>';
   el.scrollTop=el.scrollHeight;
 }
 function sendFin(){
   const inp=document.getElementById('finp');if(!inp)return;const t=inp.value.trim();if(!t)return;
   const qid=CQ?.id;if(!qid)return;
-  inp.value='';
-  fbSendChat(qid,t);
-  if(!S.paired){
-    if(!msgs[qid])msgs[qid]=[];
-    msgs[qid].push({isMe:true,senderName:S.name||'You',text:t,time:Date.now()});
-    S.messages=msgs;save();renderFMsgs();
-    setTimeout(()=>{const rps=["So true!","I see your point","That surprised me!","Let's talk more","Haha I love you!"];msgs[qid].push({isMe:false,senderName:S.partnerName||'Partner',text:rps[Math.floor(Math.random()*rps.length)],time:Date.now()});S.messages=msgs;save();renderFMsgs()},1500);
-  }
+  if(!msgs[qid])msgs[qid]=[];
+  msgs[qid].push({from:'me',text:t,time:Date.now()});
+  inp.value='';S.messages=msgs;save();renderFMsgs();
+  fbSendChat(qid,t,'me');
+  if(!S.paired){setTimeout(()=>{const rps=['So true!','I see your point 😊','That surprised me!','Let\'s talk more 💕','Haha I love you!'];msgs[qid].push({from:'pt',text:rps[Math.floor(Math.random()*rps.length)],time:Date.now()});S.messages=msgs;save();renderFMsgs()},1500)}
 }
 function exitPlay(){document.getElementById('sp').classList.remove('active');document.getElementById('sa').classList.add('active');showTab('home');renderAll()}
-function reviewQuiz(entry){
-  if(typeof entry==='string')try{entry=JSON.parse(entry)}catch(e){return}
-  CQ=QUIZZES.find(q=>q.id===entry.id);if(!CQ)return;
-  CQs=entry.qs;myA=entry.myA;ptA=entry.ptA;
-  const matched=entry.matched,pct=entry.pct;
-  document.getElementById('sa').classList.remove('active');document.getElementById('sp').classList.add('active');
-  document.getElementById('pttitle').textContent=CQ.emoji+' '+CQ.name+' — Results';
-  document.getElementById('pfill').style.width='100%';
-  const items=CQs.map((q,i)=>{const ql=Array.isArray(q)?q.join(' OR '):q;const same=String(myA[i])===String(ptA[i]);
-    return'<div class="aitem"><div class="aq">'+ql.slice(0,60)+(ql.length>60?'…':'')+'</div><div class="achips"><span class="achip '+(same?'m':'d')+'">'+(entry.myName||S.name||'You')+': '+String(myA[i]||'—').slice(0,30)+'</span><span class="achip p">'+(entry.ptName||S.partnerName||'Partner')+': '+String(ptA[i]!==undefined?ptA[i]:'—').slice(0,30)+'</span></div></div>';
-  }).join('');
-  document.getElementById('pbody').innerHTML='<div class="finwrap"><span class="finem">'+(pct>=80?'💞':pct>=50?'💛':'💙')+'</span><div class="finpct">'+pct+'% match!</div><p class="finsub">'+matched+' of '+myA.length+' answers aligned</p><div class="acard"><div class="albl">All answers</div>'+items+'</div><button class="btn btn-r" onclick="exitPlay()">← Back</button></div>';
-}
 
 // ── DISCUSS TAB ──
 function renderDiscuss(){
@@ -904,7 +851,7 @@ function renderDiscuss(){
         <span style="font-size:1.25rem">${r.emoji}</span><span style="flex:1;font-size:.88rem;font-weight:600">${r.name}</span>
         <span style="font-family:var(--fm);font-size:.65rem;text-transform:uppercase;color:var(--muted)">${m.length} msg</span>
       </div>
-      <div class="msgs" style="display:flex;flex-direction:column;gap:.35rem">${m.length?m.map(mg=>`<div class="bub ${mg.isMe?'me':'pt'}" style="font-size:.72rem"><span style="opacity:.6">${mg.isMe?'You':mg.senderName||'Partner'}:</span> ${mg.text}</div>`).join(''):'<div class="emsg" style="font-size:.72rem">No messages yet</div>'}</div>
+      <div class="msgs" style="display:flex;flex-direction:column;gap:.35rem">${m.length?m.map(mg=>`<div class="bub ${mg.from==='me'?'me':'pt'}" style="font-size:.72rem">${mg.text}</div>`).join(''):'<div class="emsg" style="font-size:.72rem">No messages yet</div>'}</div>
       <div class="crow2" style="margin-top:.5rem">
         <input class="cinput" id="dc${r.id}" placeholder="Add a comment..." style="font-size:.75rem" onkeydown="if(event.key==='Enter')sendDC(${r.id})">
         <button class="csend" style="width:1.85rem;height:1.85rem;font-size:.8rem" onclick="sendDC(${r.id})">➤</button>
@@ -914,14 +861,9 @@ function renderDiscuss(){
 }
 function sendDC(qid){
   const inp=document.getElementById('dc'+qid);if(!inp)return;const t=inp.value.trim();if(!t)return;
-  inp.value='';
-  fbSendChat(qid,t);
-  if(!S.paired){
-    if(!msgs[qid])msgs[qid]=[];
-    msgs[qid].push({isMe:true,senderName:S.name||'You',text:t,time:Date.now()});
-    S.messages=msgs;save();
-    setTimeout(()=>{const rps=["So true!","That's fair!","I love you","Agree!","Interesting..."];msgs[qid].push({isMe:false,senderName:S.partnerName||'Partner',text:rps[Math.floor(Math.random()*rps.length)],time:Date.now()});S.messages=msgs;save();renderDiscuss()},1500);
-  }
+  if(!msgs[qid])msgs[qid]=[];msgs[qid].push({from:'me',text:t,time:Date.now()});
+  inp.value='';S.messages=msgs;save();fbSendChat(qid,t,'me');
+  if(!S.paired){setTimeout(()=>{const rps=['So true!','That\'s fair!','I love you ❤️','Agree!','Interesting...'];msgs[qid].push({from:'pt',text:rps[Math.floor(Math.random()*rps.length)],time:Date.now()});S.messages=msgs;save();renderDiscuss()},1500)}
   renderDiscuss();
 }
 
