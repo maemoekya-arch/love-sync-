@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>LoveSync 💞</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
+  import { getDatabase, ref, set, get, update, onValue, onChildAdded, push, onDisconnect } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDM2jU6NsjL2UMTSmrBv93S13Sc62eDCAU",
+    authDomain: "love-sync-23d8b.firebaseapp.com",
+    databaseURL: "https://love-sync-23d8b-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "love-sync-23d8b",
+    storageBucket: "love-sync-23d8b.firebasestorage.app",
+    messagingSenderId: "1016402316013",
+    appId: "1:1016402316013:web:065b632f8966d015829ae4",
+    measurementId: "G-XLDFEHTZCN"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const database = getDatabase(app);
+
+  // Expose Firebase helpers to window so the main script can use them
+  window.FB = {
+    ref: (path) => ref(database, path),
+    set: (r, v) => set(r, v),
+    get: (r) => get(r),
+    update: (r, v) => update(r, v),
+    push: (r, v) => push(r, v),
+    onValue: (r, cb) => onValue(r, cb),
+    onChildAdded: (r, cb) => onChildAdded(r, cb),
+    onDisconnect: (r) => onDisconnect(r),
+    off: (r) => { try { r.off && r.off() } catch(e){} }
+  };
+
+  window.fbReady = true;
+  console.log("✅ Firebase module ready");
+  // Fire any queued setup
+  if(window._fbQueue) window._fbQueue.forEach(fn => fn());
+</script>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:oklch(0.13 0.02 310);--card:oklch(0.18 0.03 320);
+  --fg:oklch(0.97 0.01 320);--muted:oklch(0.70 0.04 320);
+  --border:oklch(0.45 0.18 350/0.45);
+  --rose:oklch(0.70 0.27 350);--rose-d:oklch(0.55 0.25 350);
+  --rose-soft:oklch(0.32 0.15 350);--cyan:oklch(0.78 0.18 200);
+  --lav:oklch(0.70 0.18 295);--lav-soft:oklch(0.30 0.12 295);
+  --mint:oklch(0.78 0.18 175);--mint-soft:oklch(0.30 0.10 175);
+  --gold:oklch(0.82 0.16 85);--gold-soft:oklch(0.30 0.10 85);
+  --grad-hero:linear-gradient(135deg,oklch(0.55 0.28 340),oklch(0.45 0.25 295) 50%,oklch(0.55 0.22 220));
+  --grad-bg:radial-gradient(ellipse at top,oklch(0.22 0.12 340) 0%,oklch(0.13 0.02 310) 55%);
+  --grad-prof:linear-gradient(135deg,oklch(0.55 0.28 340),oklch(0.45 0.22 295));
+  --grad-rose:linear-gradient(135deg,oklch(0.55 0.28 350),oklch(0.40 0.22 320));
+  --grad-peach:linear-gradient(135deg,oklch(0.60 0.22 35),oklch(0.50 0.25 350));
+  --grad-violet:linear-gradient(135deg,oklch(0.50 0.25 295),oklch(0.40 0.20 270));
+  --grad-gold:linear-gradient(135deg,oklch(0.60 0.20 70),oklch(0.50 0.22 35));
+  --grad-mint:linear-gradient(135deg,oklch(0.55 0.20 175),oklch(0.40 0.20 200));
+  --grad-cyan:linear-gradient(135deg,oklch(0.55 0.20 220),oklch(0.40 0.18 250));
+  --grad-magenta:linear-gradient(135deg,oklch(0.55 0.28 320),oklch(0.40 0.20 295));
+  --grad-lav:linear-gradient(135deg,oklch(0.55 0.22 280),oklch(0.45 0.25 320));
+  --glow:0 0 30px -4px oklch(0.70 0.27 350/0.55);
+  --shadow:0 4px 20px -6px oklch(0.50 0.20 340/0.35),0 0 0 1px oklch(0.45 0.18 350/0.25);
+  --fd:'Space Grotesk',sans-serif;--fm:'JetBrains Mono',monospace;
+}
+html,body{background:var(--grad-bg);background-attachment:fixed;color:var(--fg);font-family:'Space Grotesk',sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--rose);border-radius:2px}
+.app{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+.screen{display:none;flex-direction:column;min-height:100vh}.screen.active{display:flex}
+.scroll{flex:1;overflow-y:auto;padding-bottom:80px}.scroll::-webkit-scrollbar{display:none}
+.cyber{background-image:linear-gradient(oklch(0.7 0.27 350/0.08) 1px,transparent 1px),linear-gradient(90deg,oklch(0.7 0.27 350/0.08) 1px,transparent 1px);background-size:32px 32px}
+/* TOPBAR */
+.topbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:oklch(0.13 0.02 310/0.85);backdrop-filter:blur(20px);padding:.75rem 1rem}
+.logo{font-family:var(--fd);font-size:1.25rem;font-weight:700;color:var(--rose);text-shadow:0 0 20px oklch(0.7 0.27 350/0.6);cursor:pointer}
+.logo span{color:var(--cyan);text-shadow:0 0 18px oklch(0.78 0.18 200/0.6)}
+.pbtn{display:flex;align-items:center;gap:.5rem;border-radius:50px;border:1px solid oklch(0.45 0.18 350/0.4);background:oklch(0.18 0.03 320/0.7);padding:.25rem .75rem .25rem .25rem;cursor:pointer;transition:all .2s;backdrop-filter:blur(8px)}
+.pbtn:hover{border-color:var(--rose);box-shadow:var(--glow)}
+.pav{width:28px;height:28px;border-radius:50%;background:var(--grad-cyan);display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#fff;overflow:hidden;flex-shrink:0}
+.pav img{width:100%;height:100%;object-fit:cover}
+.online-dot{width:8px;height:8px;border-radius:50%;background:var(--mint);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+/* BNAV */
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;z-index:40;display:flex;border-top:1px solid oklch(0.45 0.18 350/0.3);background:oklch(0.13 0.02 310/0.85);backdrop-filter:blur(20px)}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:.15rem;padding:.65rem .5rem;cursor:pointer;border:none;background:transparent;color:oklch(0.55 0.04 320);font-size:.6rem;font-weight:500;transition:all .2s;position:relative}
+.ni.active{color:var(--rose);text-shadow:0 0 12px oklch(0.7 0.27 350/0.5)}
+.ni.active::before{content:'';position:absolute;top:0;width:2.5rem;height:2px;border-radius:1px;background:var(--rose);box-shadow:var(--glow)}
+/* WELCOME */
+#sw{background:radial-gradient(ellipse at 30% 20%,oklch(0.4 0.22 340) 0%,oklch(0.13 0.02 310) 60%),radial-gradient(ellipse at 80% 80%,oklch(0.3 0.18 220) 0%,transparent 50%);align-items:center;justify-content:center;text-align:center;padding:2rem 1.5rem}
+.w-heart{font-size:4rem;animation:hpulse 1.4s ease-in-out infinite;display:block;margin-bottom:1rem}
+@keyframes hpulse{0%,100%{transform:scale(1);filter:drop-shadow(0 0 8px oklch(0.7 0.27 350/0.6))}50%{transform:scale(1.18);filter:drop-shadow(0 0 24px oklch(0.7 0.27 350/0.9))}}
+.w-title{font-family:var(--fd);font-size:2.75rem;font-weight:700;background:linear-gradient(135deg,oklch(0.7 0.27 350),oklch(0.65 0.25 295));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.15;margin-bottom:.35rem}
+.w-badge{display:inline-block;background:oklch(0.7 0.27 350/0.18);border:1px solid oklch(0.7 0.27 350/0.4);border-radius:50px;padding:.3rem 1rem;font-family:var(--fm);font-size:.72rem;color:var(--rose);margin-bottom:1.5rem}
+.w-sub{color:var(--muted);font-size:.95rem;margin-bottom:2rem}
+.wbtns{display:flex;flex-direction:column;align-items:center;gap:.65rem;width:100%;max-width:300px}
+.btn{border:none;border-radius:50px;padding:.9rem 2rem;font-size:.95rem;font-weight:600;cursor:pointer;font-family:var(--fd);transition:all .2s;width:100%}
+.btn-r{background:var(--rose);color:oklch(0.13 0.02 310);box-shadow:var(--glow)}.btn-r:hover{transform:translateY(-2px);filter:brightness(1.1)}
+.btn-c{background:transparent;border:1px solid oklch(0.78 0.18 200/0.5);color:var(--cyan)}.btn-c:hover{background:oklch(0.78 0.18 200/0.1)}
+.btn-g{background:transparent;border:none;color:oklch(0.6 0.04 320);font-size:.8rem;text-decoration:underline;font-family:var(--fd);cursor:pointer;padding:.4rem}
+/* OVERLAY */
+.ov{position:fixed;inset:0;z-index:100;display:flex;align-items:flex-end;justify-content:center;background:oklch(0/0.7);backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .25s;padding:0 .75rem}
+.ov.open{opacity:1;pointer-events:all}
+.sheet{background:oklch(0.18 0.03 320/0.97);border-radius:1.5rem 1.5rem 0 0;border-top:1px solid oklch(0.45 0.18 350/0.4);padding:1.25rem 1.5rem 2.5rem;width:100%;max-width:430px;transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);backdrop-filter:blur(20px);box-shadow:var(--glow)}
+.ov.open .sheet{transform:translateY(0)}
+.handle{width:2.5rem;height:.25rem;border-radius:.125rem;background:oklch(0.7 0.27 350/0.5);margin:0 auto 1.25rem}
+.mtitle{font-family:var(--fd);font-size:1.5rem;font-weight:700;color:var(--rose);text-shadow:0 0 20px oklch(0.7 0.27 350/0.6);text-align:center;margin-bottom:1.25rem}
+.field{margin-bottom:.85rem}
+.field label{display:block;font-family:var(--fm);font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:oklch(0.7 0.27 350/0.9);margin-bottom:.4rem}
+.field input{width:100%;background:oklch(0.13 0.02 310/0.6);border:1px solid oklch(0.45 0.18 350/0.4);border-radius:.75rem;padding:.75rem 1rem;font-size:.9rem;color:var(--fg);font-family:var(--fd);outline:none;transition:all .2s}
+.field input:focus{border-color:var(--rose);box-shadow:0 0 0 3px oklch(0.7 0.27 350/0.15)}
+.field input::placeholder{color:oklch(0.55 0.04 320/0.4)}
+input[type=file]{display:none}
+.av-up{display:flex;flex-direction:column;align-items:center;gap:.5rem;margin-bottom:1.25rem}
+.av-circ{width:80px;height:80px;border-radius:50%;background:var(--grad-hero);border:3px solid oklch(0.7 0.27 350/0.6);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;position:relative}
+.av-circ img{width:100%;height:100%;object-fit:cover}
+.cam-b{position:absolute;bottom:-2px;right:-2px;width:26px;height:26px;border-radius:50%;background:var(--rose);border:2px solid var(--card);display:flex;align-items:center;justify-content:center;font-size:.65rem;box-shadow:var(--glow)}
+/* PAIR MODAL */
+.pcode{position:relative;overflow:hidden;border-radius:1rem;border:1px solid oklch(0.45 0.18 350/0.5);background:var(--grad-hero);padding:1rem 1.5rem;text-align:center;font-family:var(--fm);font-size:2rem;font-weight:700;letter-spacing:.2em;color:#fff;box-shadow:var(--glow);margin-bottom:.35rem}
+.pcode .cyber{position:absolute;inset:0;opacity:.3;pointer-events:none}
+.pcode span{position:relative;text-shadow:0 0 20px oklch(0.7 0.27 350/0.6)}
+.phint{text-align:center;font-family:var(--fm);font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;color:oklch(0.6 0.04 320);margin-bottom:1.25rem}
+.or{position:relative;text-align:center;color:oklch(0.5 0.04 320);font-family:var(--fm);font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;margin:1rem 0}
+.or::before,.or::after{content:'';position:absolute;top:50%;width:38%;height:1px;background:oklch(0.45 0.18 350/0.3)}
+.or::before{left:0}.or::after{right:0}
+.or span{background:oklch(0.18 0.03 320/0.97);padding:0 .75rem;position:relative;z-index:1}
+.cinp{text-align:center;font-family:var(--fm);font-size:1.5rem;font-weight:700;letter-spacing:.3em}
+.pstatus{text-align:center;font-size:.82rem;margin:.5rem 0;min-height:1.25rem}
+.pstatus.ok{color:var(--mint)}.pstatus.err{color:oklch(0.65 0.25 25)}
+/* HERO */
+.hero{position:relative;margin:1rem;border-radius:1.5rem;overflow:hidden;background:var(--grad-hero);padding:1.5rem 1.25rem;color:#fff;box-shadow:var(--glow)}
+.hero .cyber{position:absolute;inset:0;opacity:.4;pointer-events:none}
+.hblob1{position:absolute;top:-2.5rem;right:-2.5rem;width:10rem;height:10rem;border-radius:50%;background:oklch(0.7 0.27 350/0.3);filter:blur(48px);pointer-events:none}
+.hblob2{position:absolute;bottom:-2.5rem;left:-2.5rem;width:10rem;height:10rem;border-radius:50%;background:oklch(0.78 0.18 200/0.2);filter:blur(48px);pointer-events:none}
+.hi{position:relative}
+.crow{display:flex;align-items:center;justify-content:center;gap:1.25rem;margin-bottom:1.25rem}
+.hav-w{display:flex;flex-direction:column;align-items:center;gap:.4rem}
+.hav{width:84px;height:84px;border-radius:50%;border:3px solid oklch(0.7 0.27 350/0.6);background:oklch(0.35 0.15 340/0.6);display:flex;align-items:center;justify-content:center;font-size:2rem;overflow:hidden;box-shadow:0 0 20px oklch(0.7 0.27 350/0.4)}
+.hav.c{border-color:oklch(0.78 0.18 200/0.6);box-shadow:0 0 20px oklch(0.78 0.18 200/0.4)}
+.hav img{width:100%;height:100%;object-fit:cover}
+.havn{font-family:var(--fm);font-size:.65rem;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.85)}
+.hheart{font-size:2rem;animation:hpulse 1.4s ease-in-out infinite}
+.dnum{font-family:var(--fd);font-size:3rem;font-weight:700;color:#fff;text-shadow:0 0 20px oklch(0.7 0.27 350/0.6);line-height:1}
+.dlbl{display:flex;align-items:center;gap:.4rem;font-size:.75rem;color:rgba(255,255,255,.85)}
+.spill{display:inline-flex;align-items:center;gap:.5rem;border-radius:50px;border:1px solid rgba(255,255,255,.3);background:rgba(0,0,0,.3);padding:.3rem .85rem;font-size:.75rem;backdrop-filter:blur(8px);color:#fff;margin:.6rem auto 0;display:block;width:fit-content}
+/* CHIPS */
+.chips{display:flex;gap:.5rem;overflow-x:auto;padding:.5rem 1rem;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;white-space:nowrap;border-radius:50px;border:1px solid oklch(0.45 0.18 350/0.4);background:oklch(0.18 0.03 320/0.6);padding:.4rem .9rem;font-size:.75rem;font-weight:500;cursor:pointer;transition:all .2s;color:rgba(255,255,255,.8)}
+.chip.on{border-color:var(--rose);background:var(--rose);color:oklch(0.13 0.02 310);box-shadow:var(--glow)}
+.sechdr{display:flex;align-items:center;justify-content:space-between;padding:.5rem 1rem;font-size:.875rem;font-weight:600}
+.sechdr button{background:none;border:none;color:var(--rose);font-size:.75rem;font-family:var(--fd);cursor:pointer}
+/* QUIZ CARDS */
+.qlist{display:flex;flex-direction:column;gap:.75rem;padding:0 1rem 1.5rem}
+.qcard{position:relative;display:flex;align-items:center;gap:.75rem;border-radius:1rem;padding:1rem;color:#fff;box-shadow:var(--shadow);cursor:pointer;transition:all .25s;overflow:hidden;animation:fup .35s ease both}
+@keyframes fup{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.qcard:hover{transform:translateY(-2px);box-shadow:var(--glow)}.qcard:active{transform:scale(.98)}
+.qcard .cyber{position:absolute;inset:0;opacity:.25;pointer-events:none}
+.qblob{position:absolute;top:-1.5rem;right:-1.5rem;width:5rem;height:5rem;border-radius:50%;background:rgba(255,255,255,.15);filter:blur(32px);pointer-events:none}
+.qem{position:relative;width:3rem;height:3rem;border-radius:.75rem;background:rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font-size:1.4rem;backdrop-filter:blur(8px);flex-shrink:0}
+.qi{position:relative;flex:1;min-width:0}
+.qn{font-size:.88rem;font-weight:600;margin-bottom:.35rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qm{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem;font-size:.7rem;color:rgba(255,255,255,.85)}
+.ftag{border-radius:50px;padding:.1rem .55rem;font-size:.65rem;font-weight:500;background:rgba(0,0,0,.25)}
+.qr{position:relative;display:flex;flex-direction:column;align-items:flex-end;gap:.4rem;flex-shrink:0}
+.avst{display:flex}.avst .avx{width:24px;height:24px;border-radius:50%;border:2px solid rgba(255,255,255,.4);background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:.7rem;overflow:hidden;margin-left:-6px}
+.avst .avx:first-child{margin-left:0}.avst .avx img{width:100%;height:100%;object-fit:cover}
+.dtag{display:inline-flex;align-items:center;gap:.2rem;border-radius:50px;background:oklch(0.78 0.18 175/0.9);padding:.1rem .55rem;font-size:.65rem;font-weight:700;color:oklch(0.13 0.02 310)}
+.ntag{border-radius:50px;border:1px solid rgba(255,255,255,.4);padding:.1rem .55rem;font-size:.65rem;color:rgba(255,255,255,.8)}
+.grad-rose{background:var(--grad-rose)}.grad-peach{background:var(--grad-peach)}.grad-violet{background:var(--grad-violet)}
+.grad-gold{background:var(--grad-gold)}.grad-mint{background:var(--grad-mint)}.grad-cyan{background:var(--grad-cyan)}
+.grad-magenta{background:var(--grad-magenta)}.grad-lav{background:var(--grad-lav)}
+/* PLAY */
+#sp{background:var(--bg)}
+.plhdr{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:.75rem;border-bottom:1px solid var(--border);background:oklch(0.18 0.03 320);padding:.75rem 1rem}
+.bk,.xb{width:2rem;height:2rem;border-radius:50%;border:none;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);transition:background .2s;flex-shrink:0;font-size:1rem}
+.bk:hover,.xb:hover{background:oklch(0.22 0.04 320)}
+.ptw{flex:1;min-width:0}
+.ptt{font-family:var(--fd);font-size:.95rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pb{height:3px;border-radius:2px;background:var(--border);margin-top:.35rem;overflow:hidden}
+.pf{height:100%;border-radius:2px;background:var(--rose);transition:width .5s cubic-bezier(.4,0,.2,1)}
+.pc{font-size:.75rem;color:var(--muted);flex-shrink:0}
+.qa{padding:1.25rem 1rem;animation:fup .35s ease}
+.qlbl{font-size:.75rem;color:var(--muted);margin-bottom:.35rem}
+.qprompt{font-family:var(--fd);font-size:1.25rem;font-weight:600;line-height:1.4;color:var(--fg);margin-bottom:1.35rem}
+.qprompt em{font-style:normal;color:var(--rose-d)}
+/* ANSWER BTNs */
+.lrow{display:flex;gap:.75rem}
+.lbtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:.5rem;border-radius:1rem;border:2px solid var(--border);background:oklch(0.18 0.03 320/0.6);padding:1rem .75rem;cursor:pointer;transition:all .22s;font-family:var(--fd)}
+.lbtn:hover,.lbtn.sel{border-color:var(--rose);background:oklch(0.7 0.27 350/0.2)}
+.lbtn:disabled{cursor:not-allowed}
+.lav{width:48px;height:48px;border-radius:50%;background:var(--grad-hero);display:flex;align-items:center;justify-content:center;font-size:1.2rem;overflow:hidden}
+.lav img{width:100%;height:100%;object-fit:cover}
+.trow{display:flex;align-items:stretch;gap:.65rem}
+.tbtn{flex:1;border-radius:1rem;border:2px solid var(--border);background:oklch(0.18 0.03 320/0.6);padding:.9rem .75rem;cursor:pointer;font-family:var(--fd);font-size:.88rem;font-weight:500;color:var(--fg);transition:all .22s;text-align:center}
+.tbtn:hover,.tbtn.sel{border-color:var(--lav);background:oklch(0.7 0.18 295/0.2);color:var(--lav)}
+.tvor{align-self:center;font-size:.72rem;font-weight:700;color:var(--muted);flex-shrink:0}
+.wlist{display:flex;flex-direction:column;gap:.65rem}
+.wbtn{border-radius:1rem;border:2px solid var(--border);background:oklch(0.18 0.03 320/0.6);padding:.9rem 1rem;cursor:pointer;font-family:var(--fd);font-size:.88rem;font-weight:500;color:var(--fg);transition:all .22s;text-align:left;width:100%}
+.wbtn:hover,.wbtn.sel{border-color:var(--gold);background:oklch(0.82 0.16 85/0.15);color:var(--gold)}
+.agrid{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+.abtn{border-radius:1rem;border:2px solid var(--border);background:oklch(0.18 0.03 320/0.6);padding:.75rem .5rem;cursor:pointer;font-family:var(--fd);font-size:.8rem;font-weight:500;color:var(--fg);transition:all .22s;text-align:center}
+.abtn:hover,.abtn.sel{border-color:var(--mint);background:oklch(0.78 0.18 175/0.15);color:var(--mint)}
+.nrow{display:flex;gap:.75rem}
+.nbtn{flex:1;border:2px solid var(--border);border-radius:1rem;background:oklch(0.18 0.03 320/0.6);padding:1rem;cursor:pointer;font-family:var(--fd);font-size:.88rem;font-weight:700;color:var(--fg);transition:all .22s;text-align:center}
+.nhave:hover,.nhave.sel{border-color:var(--rose);background:oklch(0.7 0.27 350/0.2);color:var(--rose)}
+.nnever:hover,.nnever.sel{border-color:var(--mint);background:oklch(0.78 0.18 175/0.2);color:var(--mint)}
+.ocard{border-radius:1rem;border:1px solid var(--border);background:var(--card);padding:1rem;margin-bottom:.85rem}
+.olbl{font-size:.72rem;color:var(--muted);margin-bottom:.4rem}
+.ocard textarea{width:100%;background:oklch(0.13 0.02 310/0.6);border:1.5px solid var(--border);border-radius:.65rem;padding:.75rem;font-family:var(--fd);font-size:.88rem;color:var(--fg);resize:none;height:6rem;outline:none;transition:border-color .2s}
+.ocard textarea:focus{border-color:var(--rose)}
+.ocard textarea::placeholder{color:oklch(0.55 0.04 320/0.4)}
+.photocard{border-radius:1rem;border:1px solid var(--border);background:var(--grad-lav);padding:1.25rem;margin-bottom:.85rem}
+/* REVEAL */
+.revcard{border-radius:1rem;border:1px solid var(--border);background:var(--card);padding:1rem;margin-top:1.25rem;animation:fup .3s ease}
+.revlbl{font-family:var(--fm);font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.75rem}
+.revrow{display:flex;align-items:center;gap:.65rem;margin-bottom:.6rem}
+.revav{width:32px;height:32px;border-radius:50%;background:var(--grad-hero);display:flex;align-items:center;justify-content:center;font-size:.85rem;overflow:hidden;flex-shrink:0}
+.revav img{width:100%;height:100%;object-fit:cover}
+.rans{flex:1;border-radius:.5rem;border:1px solid oklch(0.7 0.27 350/0.3);background:oklch(0.13 0.02 310/0.6);padding:.4rem .75rem;font-size:.85rem;color:var(--fg)}
+.rans strong{color:var(--rose)}
+.mpill{display:block;width:fit-content;margin:.5rem auto 0;border-radius:50px;background:oklch(0.78 0.18 175/0.9);padding:.25rem .85rem;font-size:.72rem;font-weight:700;color:oklch(0.13 0.02 310)}
+/* WAIT */
+.wbox{border-radius:1rem;border:1px dashed oklch(0.78 0.18 200/0.5);background:oklch(0.78 0.18 200/0.08);padding:1.25rem;text-align:center;margin-top:1.25rem}
+.wdots span{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--cyan);margin:0 2px;animation:bop .8s ease infinite}
+.wdots span:nth-child(2){animation-delay:.15s}.wdots span:nth-child(3){animation-delay:.3s}
+@keyframes bop{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-5px)}}
+/* FINISH */
+.finwrap{text-align:center;padding:1.25rem 1rem}
+.finem{font-size:3rem;display:block;margin-bottom:.5rem;animation:hpulse 1.4s ease infinite}
+.finpct{font-family:var(--fd);font-size:2.5rem;font-weight:700;color:var(--rose-d);margin-bottom:.25rem}
+.finsub{font-size:.875rem;color:var(--muted);margin-bottom:1.25rem}
+.acard{border-radius:1rem;border:1px solid var(--border);background:var(--card);padding:1rem;text-align:left;margin-bottom:1rem}
+.albl{font-family:var(--fm);font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.85rem}
+.aitem{margin-bottom:.75rem}
+.aq{font-size:.7rem;color:var(--muted);margin-bottom:.3rem}
+.achips{display:flex;flex-wrap:wrap;gap:.4rem}
+.achip{border-radius:50px;padding:.15rem .65rem;font-size:.7rem}
+.achip.m{background:oklch(0.30 0.10 175);color:var(--mint)}
+.achip.d{background:var(--rose-soft);color:var(--rose-d)}
+.achip.p{background:var(--lav-soft);color:var(--lav)}
+/* DISCUSS */
+.dcard{border-radius:1rem;border:1px solid var(--border);background:var(--card);padding:1rem;text-align:left;margin-bottom:1rem}
+.dtitle{font-size:.875rem;font-weight:500;margin-bottom:.65rem}
+.msgs{display:flex;flex-direction:column;gap:.4rem;max-height:10rem;overflow-y:auto;margin-bottom:.65rem}
+.msgs::-webkit-scrollbar{display:none}
+.bub{max-width:82%;border-radius:1rem;padding:.4rem .75rem;font-size:.75rem;line-height:1.4}
+.bub.me{background:var(--rose);color:oklch(0.13 0.02 310);align-self:flex-end;border-bottom-right-radius:.25rem}
+.bub.pt{border:1px solid oklch(0.78 0.18 200/0.4);background:oklch(0.78 0.18 200/0.15);color:var(--fg);align-self:flex-start;border-bottom-left-radius:.25rem}
+.emsg{text-align:center;font-size:.75rem;color:var(--muted);padding:.75rem}
+.crow2{display:flex;gap:.5rem}
+.cinput{flex:1;border-radius:50px;border:1.5px solid oklch(0.45 0.18 350/0.4);background:oklch(0.13 0.02 310/0.6);padding:.55rem 1rem;font-size:.8rem;color:var(--fg);font-family:var(--fd);outline:none;transition:border-color .2s}
+.cinput:focus{border-color:var(--rose)}.cinput::placeholder{color:oklch(0.55 0.04 320/0.4)}
+.csend{width:2.25rem;height:2.25rem;border-radius:50%;background:var(--rose);color:oklch(0.13 0.02 310);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:var(--glow);transition:all .2s;flex-shrink:0}
+.csend:hover{transform:scale(1.1)}
+/* DISCUSS TAB */
+.dtab-grid{display:flex;flex-direction:column;gap:.75rem;padding:0 1rem 1.5rem}
+.dqc{border-radius:1rem;border:1px solid oklch(0.45 0.18 350/0.3);background:oklch(0.18 0.03 320/0.7);padding:1rem;backdrop-filter:blur(8px);box-shadow:var(--shadow)}
+/* PROFILE */
+.pbanner{position:relative;overflow:hidden;background:var(--grad-prof);padding:2.5rem 1rem 4rem;text-align:center}
+.pblob{position:absolute;top:-2.5rem;right:-2.5rem;width:10rem;height:10rem;border-radius:50%;background:oklch(0.7 0.27 350/0.3);filter:blur(48px);pointer-events:none}
+.paw{position:relative;display:inline-block;cursor:pointer}
+.ppa{width:6.5rem;height:6.5rem;border-radius:50%;border:3px solid oklch(0.7 0.27 350/0.7);background:var(--grad-hero);display:flex;align-items:center;justify-content:center;font-size:2.5rem;overflow:hidden;box-shadow:var(--glow);margin-bottom:.75rem}
+.ppa img{width:100%;height:100%;object-fit:cover}
+.pcam{position:absolute;bottom:-2px;right:-2px;width:1.75rem;height:1.75rem;border-radius:50%;background:var(--rose);border:2px solid var(--card);display:flex;align-items:center;justify-content:center;font-size:.65rem;box-shadow:var(--glow)}
+.pname{font-family:var(--fd);font-size:1.5rem;font-weight:700;position:relative}
+.pstbtn{display:inline-flex;align-items:center;gap:.35rem;border-radius:50px;border:1px solid rgba(255,255,255,.3);background:rgba(0,0,0,.25);padding:.3rem .85rem;font-size:.75rem;font-style:italic;cursor:pointer;margin-top:.5rem;color:rgba(255,255,255,.9);backdrop-filter:blur(8px)}
+.pdays{font-size:.75rem;color:rgba(255,255,255,.75);margin-top:.4rem;position:relative}
+.strow{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;padding:0 1rem;margin-top:-2rem;position:relative;z-index:5}
+.stbox{border-radius:1rem;border:1px solid oklch(0.45 0.18 350/0.4);background:oklch(0.18 0.03 320/0.7);padding:.85rem .5rem;text-align:center;backdrop-filter:blur(8px);box-shadow:var(--shadow)}
+.stn{font-family:var(--fd);font-size:1.5rem;font-weight:700;color:var(--rose);text-shadow:0 0 16px oklch(0.7 0.27 350/0.5)}
+.stl{font-family:var(--fm);font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;color:oklch(0.6 0.04 320)}
+.slist{display:flex;flex-direction:column;gap:.5rem;padding:1.25rem 1rem 2rem}
+.srow{display:flex;align-items:center;gap:.75rem;border-radius:1rem;border:1px solid oklch(0.45 0.18 350/0.3);background:oklch(0.18 0.03 320/0.6);padding:.85rem 1rem;cursor:pointer;transition:all .2s;backdrop-filter:blur(8px)}
+.srow:hover{border-color:var(--rose);box-shadow:var(--glow)}
+.sicon{width:2rem;height:2rem;border-radius:50%;background:oklch(0.7 0.27 350/0.2);display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0;color:var(--rose)}
+.slbl{flex:1;font-size:.88rem;font-weight:500}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- WELCOME -->
+<div id="sw" class="screen active">
+  <span class="w-heart">💞</span>
+  <h1 class="w-title">LoveSync</h1>
+  <div class="w-badge">⚡ 100 Quizzes · 600+ Questions · 10 Topics</div>
+  <p class="w-sub">Your couple quiz book — now synced in real time 💕</p>
+  <div class="wbtns">
+    <button class="btn btn-r" onclick="openM('am','signup')">✨ Create account</button>
+    <button class="btn btn-c" onclick="doGoogle()">🔍 Continue with Google</button>
+    <button class="btn-g" onclick="openM('am','login')">Already have an account? Sign in</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="sa" class="screen">
+  <header class="topbar">
+    <span class="logo" onclick="showTab('home')">LoveSync<span>_</span></span>
+    <button class="pbtn" onclick="openM('pm')">
+      <div class="pav" id="tpav"><span id="tpavc">?</span></div>
+      <span id="tpnm" style="font-size:.75rem;font-weight:500;color:var(--fg)">Pair up</span>
+      <span class="online-dot" id="tpdot" style="display:none"></span>
+    </button>
+  </header>
+
+  <div class="scroll" id="tab-home">
+    <div class="hero">
+      <div class="cyber"></div><div class="hblob1"></div><div class="hblob2"></div>
+      <div class="hi">
+        <div class="crow">
+          <div class="hav-w"><div class="hav" id="hme"><span id="hmec">🧑</span></div><span class="havn" id="hmen">You</span></div>
+          <span class="hheart">💞</span>
+          <div class="hav-w"><div class="hav c" id="hpt"><span id="hptc">🧑</span></div><span class="havn" id="hptn">Pair up</span></div>
+        </div>
+        <div style="text-align:center;margin-bottom:.6rem">
+          <button style="background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:.2rem;margin:0 auto;transition:transform .2s" onclick="editDate()" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform=''">
+            <span class="dnum" id="hdays">0</span>
+            <span class="dlbl">📅 <span id="hdlbl">tap to set anniversary</span></span>
+          </button>
+        </div>
+        <div style="text-align:center">
+          <div class="spill">🔥 <span id="hstr">0</span> day streak<span id="hmwrap" style="display:none"> · ✨ <span id="hm">0</span>% match</span></div>
+        </div>
+        <div id="ptonline" style="display:none;text-align:center;margin-top:.5rem">
+          <div style="display:inline-flex;align-items:center;gap:.4rem;border-radius:50px;background:oklch(0.78 0.18 175/0.2);border:1px solid oklch(0.78 0.18 175/0.4);padding:.25rem .75rem;font-size:.72rem;color:var(--mint)">🟢 <span id="ptonlinen">Partner</span> is online!</div>
+        </div>
+      </div>
+    </div>
+    <div class="sechdr" style="margin-top:1.25rem"><span style="color:rgba(255,255,255,.9)">Browse by topic</span></div>
+    <div class="chips" id="tchips"></div>
+    <div class="sechdr" style="margin-top:.75rem">
+      <span id="qlt" style="color:rgba(255,255,255,.9)">All quizzes</span>
+      <button onclick="shuffleQ()">🔀 Shuffle</button>
+    </div>
+    <div class="qlist" id="qlist"></div>
+  </div>
+
+  <div class="scroll" id="tab-activities" style="display:none">
+    <div style="padding:1.25rem 1rem .5rem;text-align:center">
+      <h1 style="font-family:var(--fd);font-size:1.5rem;font-weight:700;color:var(--rose);text-shadow:0 0 20px oklch(0.7 0.27 350/0.6)">Questions & Games</h1>
+      <p style="font-size:.75rem;color:var(--muted);margin-top:.25rem">Pick a category and play together</p>
+    </div>
+    <div id="catscroll" style="display:flex;gap:.75rem;overflow-x:auto;padding:.5rem 1rem;scrollbar-width:none"></div>
+    <div style="height:1.5rem"></div>
+  </div>
+
+  <div class="scroll" id="tab-discuss" style="display:none">
+    <h1 style="font-family:var(--fd);font-size:1.5rem;font-weight:700;color:var(--rose);text-shadow:0 0 20px oklch(0.7 0.27 350/0.6);text-align:center;padding:1.25rem 1rem .5rem">Discussion</h1>
+    <div id="dempty" style="display:flex;flex-direction:column;align-items:center;padding:4rem 1.5rem;text-align:center">
+      <span style="font-size:3rem;animation:hpulse 1.4s ease infinite;display:block;margin-bottom:.75rem">💬</span>
+      <p style="font-family:var(--fd);font-size:1.1rem;font-weight:600;color:var(--rose)">Play a quiz to start discussing!</p>
+    </div>
+    <div class="dtab-grid" id="dlist"></div>
+  </div>
+
+  <div class="scroll" id="tab-profile" style="display:none">
+    <div class="pbanner">
+      <div class="pblob"></div>
+      <div style="position:relative">
+        <div class="paw" onclick="chAv()">
+          <div class="ppa" id="pfav"><span id="pfavc">🧑</span></div>
+          <div class="pcam">📷</div>
+          <input type="file" id="pffile" accept="image/*" onchange="handleAv(event)">
+        </div>
+        <div class="pname" id="pfname">Your name</div>
+        <button class="pstbtn" onclick="editStatus()">💬 <span id="pfstatus">Tap to add a status...</span></button>
+        <div class="pdays" id="pfdays">Set your anniversary below</div>
+      </div>
+    </div>
+    <div class="strow">
+      <div class="stbox"><div class="stn" id="stq">0</div><div class="stl">Quizzes</div></div>
+      <div class="stbox"><div class="stn" id="sts">0</div><div class="stl">Streak</div></div>
+      <div class="stbox"><div class="stn" id="stm">—</div><div class="stl">Match</div></div>
+    </div>
+    <div class="slist">
+      <div class="srow" onclick="editName()"><div class="sicon">✏️</div><span class="slbl">Edit name</span><span style="color:oklch(0.7 0.27 350/0.7)">›</span></div>
+      <div class="srow" onclick="editStatus()"><div class="sicon">💬</div><span class="slbl">Edit status</span><span style="color:oklch(0.7 0.27 350/0.7)">›</span></div>
+      <div class="srow" onclick="editDate()"><div class="sicon">📅</div><span class="slbl" id="datelbl">Set anniversary date</span><span style="color:oklch(0.7 0.27 350/0.7)">›</span></div>
+      <div class="srow" onclick="openM('pm')"><div class="sicon">🔗</div><span class="slbl" id="pairlbl">Pair code</span><span style="color:oklch(0.7 0.27 350/0.7)">›</span></div>
+      <div class="srow" onclick="installW()"><div class="sicon">📱</div><span class="slbl">Add to home screen</span><span style="color:oklch(0.7 0.27 350/0.7)">›</span></div>
+      <div class="srow" onclick="resetAll()"><div class="sicon" style="background:oklch(0.65 0.25 25/0.2);color:oklch(0.65 0.25 25)">🔄</div><span class="slbl">Sign out & reset</span><span style="color:oklch(0.7 0.27 350/0.7)">›</span></div>
+    </div>
+  </div>
+
+  <nav class="bnav">
+    <button class="ni active" id="n-home" onclick="showTab('home')"><span style="font-size:1.2rem">🏠</span><span>Home</span></button>
+    <button class="ni" id="n-activities" onclick="showTab('activities')"><span style="font-size:1.2rem">📊</span><span>Activities</span></button>
+    <button class="ni" id="n-discuss" onclick="showTab('discuss')"><span style="font-size:1.2rem">💬</span><span>Discuss</span></button>
+    <button class="ni" id="n-profile" onclick="showTab('profile')"><span style="font-size:1.2rem">👤</span><span>Profile</span></button>
+  </nav>
+</div>
+
+<!-- PLAY -->
+<div id="sp" class="screen">
+  <header class="plhdr">
+    <button class="bk" onclick="exitPlay()">←</button>
+    <div class="ptw"><div class="ptt" id="pttitle">Quiz</div><div class="pb"><div class="pf" id="pfill" style="width:0%"></div></div></div>
+    <span class="pc" id="pctxt">1/8</span>
+    <button class="xb" onclick="exitPlay()">✕</button>
+  </header>
+  <div style="flex:1;overflow-y:auto;padding-bottom:1rem" id="pbody"></div>
+</div>
+
+<!-- AUTH MODAL -->
+<div class="ov" id="am" onclick="closeOut(event,'am')"><div class="sheet"><div id="ac"></div></div></div>
+
+<!-- PAIR MODAL -->
+<div class="ov" id="pm" onclick="closeOut(event,'pm')">
+  <div class="sheet">
+    <div class="handle"></div>
+    <div style="text-align:center;font-size:3rem;animation:hpulse 1.4s ease infinite;margin-bottom:.75rem">💑</div>
+    <h2 class="mtitle">Connect with your partner</h2>
+    <p style="text-align:center;font-size:.88rem;color:var(--muted);margin-bottom:1.25rem">Share your code or enter theirs</p>
+    <div class="pcode"><div class="cyber"></div><span id="mycode">——</span></div>
+    <p class="phint">Your pair code — share this!</p>
+    <div class="or"><span>or enter partner's code</span></div>
+    <div class="field"><input class="cinp" id="codeinp" placeholder="XXXXXX" maxlength="6" oninput="this.value=this.value.toUpperCase()"></div>
+    <div class="pstatus" id="pstat"></div>
+    <button class="btn btn-r" onclick="connectPartner()" style="margin-top:.25rem">Connect 💕</button>
+  </div>
+</div>
+
+<!-- ✅ APP SCRIPT - runs AFTER Firebase is initialized above -->
+<script>
+const KEY='ls_fb2';
+let S=load(),CQ=null,CQs=[],CQi=0,myA=[],ptA=[],msgs={};
+let myRef=null,ptRef=null,chatRefs={};
+
+// ── FIREBASE HELPERS (module version) ──
+// Queue setup until Firebase module is ready
+function runWhenFbReady(fn){
+  if(window.fbReady && window.FB) fn();
+  else { window._fbQueue = window._fbQueue||[]; window._fbQueue.push(fn); }
+}
+
+function fbSetup(){
+  runWhenFbReady(()=>{
+    const r = FB.ref('users/'+S.pairCode);
+    FB.set(r,{name:S.name,avatar:S.avatar,pairCode:S.pairCode,online:true,ts:Date.now()});
+    const disc = FB.onDisconnect(r);
+    disc.update({online:false,ts:Date.now()});
+    myRef = r;
+    if(S.paired&&S.pairedCode) fbListenPartner(S.pairedCode);
+  });
+}
+function fbUpdate(path,data){
+  runWhenFbReady(()=>{ try{ FB.update(FB.ref(path),data) }catch(e){} });
+}
+function fbListenPartner(code){
+  runWhenFbReady(()=>{
+    const r = FB.ref('users/'+code);
+    ptRef = r;
+    FB.onValue(r, snap=>{
+      const d=snap.val();if(!d)return;
+      S.partnerName=d.name||S.partnerName;
+      S.partnerAvatar=d.avatar||S.partnerAvatar;
+      S.partnerOnline=!!d.online;
+      save();updateTopbar();renderHero();
+      const dot=document.getElementById('tpdot');
+      if(dot)dot.style.display=S.partnerOnline?'inline-block':'none';
+      const banner=document.getElementById('ptonline');
+      const pn=document.getElementById('ptonlinen');
+      if(banner)banner.style.display=S.partnerOnline?'block':'none';
+      if(pn)pn.textContent=S.partnerName||'Partner';
+    });
+  });
+}
+function fbSendChat(qid,text,from){
+  if(!S.paired||!S.pairedCode)return;
+  runWhenFbReady(()=>{
+    const room=[S.pairCode,S.pairedCode].sort().join('_');
+    FB.push(FB.ref('chats/'+room+'/'+qid),{from,text,time:Date.now()});
+  });
+}
+function fbListenChat(qid){
+  if(!S.paired||!S.pairedCode)return;
+  runWhenFbReady(()=>{
+    const room=[S.pairCode,S.pairedCode].sort().join('_');
+    FB.onChildAdded(FB.ref('chats/'+room+'/'+qid), snap=>{
+      const m=snap.val();
+      if(!msgs[qid])msgs[qid]=[];
+      const dup=msgs[qid].some(x=>x.time===m.time&&x.text===m.text);
+      if(!dup){msgs[qid].push(m);S.messages=msgs;save();renderDiscuss();
+        const el=document.getElementById('fmsgs');
+        if(el){el.innerHTML=msgs[qid].map(mg=>`<div class="bub ${mg.from==='me'?'me':'pt'}">${mg.text}</div>`).join('');el.scrollTop=el.scrollHeight;}
+      }
+    });
+  });
+}
+
+// ── DATA ──
+const TOPICS=[
+  {id:'relationships',label:'💑 Relationships',color:'rose'},{id:'sex_love',label:'🔥 Sex & Love',color:'peach'},
+  {id:'moral_values',label:'⚖️ Moral Values',color:'violet'},{id:'money',label:'💰 Money',color:'gold'},
+  {id:'know',label:'🧠 Know Each Other',color:'mint'},{id:'travel',label:'✈️ Travel',color:'cyan'},
+  {id:'family',label:'👨‍👩‍👧 Family',color:'magenta'},{id:'hobbies',label:'🎨 Hobbies',color:'lav'},
+  {id:'lifestyle',label:'🌿 Lifestyle',color:'mint'},{id:'food',label:'🍕 Food',color:'peach'},
+];
+const TGRAD={relationships:'rose',sex_love:'peach',moral_values:'violet',money:'gold',know:'mint',travel:'cyan',family:'magenta',hobbies:'lav',lifestyle:'mint',food:'peach'};
+const FMT={likely:{l:'Who Is More Likely To',i:'🎯'},tot:{l:'This or That',i:'⚡'},agree:{l:'Agree or Disagree',i:'🤔'},discuss:{l:'Discuss Before',i:'🗣️'},nhie:{l:'Never Have I Ever',i:'🙈'},wyr:{l:'Would You Rather',i:'💭'},photo:{l:'Answer with a Photo',i:'📸'},deep:{l:'Deep Talks',i:'💡'}};
+const QUIZZES=[
+  {id:1,topic:'relationships',name:'Conflict & Apologies',fmt:'likely',emoji:'💬',qs:['…apologize first after an argument?','…bring up an old argument during a new fight?','…go to sleep angry without resolving things?','…say something they regret in the heat of the moment?','…need more time to cool down before talking?','…make the first move to reconcile with a hug or touch?','…hold a grudge longer than a week?','…cry during a serious argument?']},
+  {id:2,topic:'relationships',name:'Love Languages',fmt:'tot',emoji:'💌',qs:[['Words of affirmation','Acts of service'],['Quality time together','Meaningful gifts'],['Physical touch','Words of affirmation'],['A heartfelt letter','A surprise date'],['Daily "I love you" texts','One big romantic gesture per year'],['Being told you\'re appreciated','Being shown through actions'],['Long deep conversations','Comfortable silence together']]},
+  {id:3,topic:'relationships',name:'Trust & Transparency',fmt:'agree',emoji:'🔐',qs:['Couples should share all passwords and have full access to each other\'s devices.','Some level of privacy is healthy and necessary even in a committed relationship.','Reading your partner\'s messages without permission is always a form of betrayal.','Trust, once broken, can fully be rebuilt with time and effort.','Jealousy in a relationship is always a red flag and never justified.','You should tell your partner every detail about your past relationships.','Lying by omission is just as serious as a direct lie.']},
+  {id:4,topic:'relationships',name:'Commitment & Future',fmt:'discuss',emoji:'🌅',qs:['What does commitment mean to each of you — is it a feeling, a choice, or both?','Where do you each see this relationship in 5 years? 10 years?','Do you believe in "the one" or do you think love is a daily choice?','What would make you reconsider the relationship — where are your dealbreakers?','How important is marriage or formal commitment to each of you?','How do you plan to keep the relationship a priority as life gets busier?']},
+  {id:5,topic:'relationships',name:'Jealousy & Insecurity',fmt:'nhie',emoji:'😬',qs:['…felt jealous of my partner\'s close friendship with someone of their preferred gender.','…checked my partner\'s social media to see who they were talking to.','…felt insecure when my partner got a lot of attention from someone else.','…compared myself to my partner\'s ex.','…felt left out when my partner prioritized friends over me.','…snooped through my partner\'s phone because I was worried.','…felt jealous of my partner\'s success or achievements.']},
+  {id:6,topic:'relationships',name:'Space & Independence',fmt:'wyr',emoji:'🦋',qs:[['have a partner who wants to spend every moment with you','one who actively encourages you to have solo time'],['know your partner\'s whereabouts at all times','have complete freedom without check-ins'],['share all friend groups with your partner','keep your social lives mostly separate'],['take all vacations together','take one solo trip per year'],['your partner work from home with you every day','have the house to yourself during work hours'],['be in a relationship where you talk every hour','reconnect deeply at the end of each day']]},
+  {id:7,topic:'relationships',name:'Daily Rituals',fmt:'photo',emoji:'📸',qs:['Show a photo that represents your favorite daily ritual together.','Find a photo that shows what a typical happy evening at home looks like.','Share a photo of the last spontaneous thing you did together.','Show a place that is "yours" as a couple — your spot.','Find a photo that shows how you celebrate each other.','Share the last photo you took of your partner without them knowing.']},
+  {id:8,topic:'relationships',name:'What I Love Most About Us',fmt:'deep',emoji:'💞',qs:['What is the one thing about our relationship that you never want to change?','When did you first realize this relationship was something truly special?','What has this relationship taught you about yourself that surprised you?','What is the most meaningful thing your partner has ever done for you?','How has your definition of love evolved since being with your partner?','What is something your partner does that makes you proud every single time?']},
+  {id:9,topic:'relationships',name:'Relationship Boundaries',fmt:'discuss',emoji:'🚧',qs:['What are the non-negotiable boundaries each of you has in this relationship?','How do you handle it when a boundary gets crossed — intentionally or not?','Are there topics you feel you can\'t openly discuss yet? Why?','Do you feel comfortable saying "no" to your partner without guilt?','How do you maintain your individual identity within the relationship?','Are there people or situations that feel like a tension point?']},
+  {id:10,topic:'relationships',name:'How We Handle Hard Times',fmt:'likely',emoji:'⛈️',qs:['…be the emotional support person when the other is going through a hard time?','…shut down and go quiet when stressed instead of asking for help?','…try to fix the problem immediately rather than just listening?','…reach out to a friend instead of their partner when upset?','…use humor to deflect when things get emotionally heavy?','…sacrifice their own comfort to support the other through a crisis?','…be the optimist when things feel hopeless?']},
+  {id:11,topic:'sex_love',name:'Initiating Intimacy',fmt:'likely',emoji:'🕯️',qs:['…initiate physical intimacy first?','…set the mood with candles, music, or ambiance?','…say "not tonight" and mean it?','…use humor to break the tension in an intimate moment?','…be the one to suggest trying something new?','…get nervous or shy about expressing a new desire?','…need more emotional connection before feeling physically close?']},
+  {id:13,topic:'sex_love',name:'Romance vs Reality',fmt:'tot',emoji:'🌹',qs:[['Spontaneous passion','Planned romantic evenings'],['A slow romantic build-up','Immediate intensity'],['Expressing love through words','Through physical closeness'],['Grand romantic gestures','Consistent small acts of love'],['Falling asleep in each other\'s arms','Having your own space in bed'],['A romantic weekend getaway','A cozy stay-at-home date'],['Passionate love letters','Flirty texts throughout the day']]},
+  {id:17,topic:'sex_love',name:'What Love Means to Me',fmt:'agree',emoji:'❤️',qs:['Love is a feeling that comes naturally — you can\'t force it or manufacture it.','Love is primarily a choice and a daily commitment, not just an emotion.','You can deeply love someone and still not be compatible with them long-term.','Falling out of love is something that can be reversed with the right effort.','Physical intimacy is essential to maintaining emotional closeness in a relationship.','Saying "I love you" too often makes it lose its meaning.']},
+  {id:21,topic:'moral_values',name:'Honesty vs. Kindness',fmt:'agree',emoji:'⚖️',qs:['Brutal honesty is always better than a kind lie, even when the truth hurts.','There are situations where lying is the most loving thing you can do.','Honesty without compassion is just cruelty dressed as virtue.','You should always tell your partner if you find someone else attractive.','Lying to protect someone\'s feelings is still a form of disrespect.','People who say "I\'m just being honest" are often using honesty as a weapon.']},
+  {id:22,topic:'moral_values',name:'Right vs. Wrong',fmt:'tot',emoji:'🧭',qs:[['Justice','Mercy when someone you love makes a serious mistake'],['Following rules','Doing what feels right in your gut'],['Forgiving someone because they deserve it','Because you need peace'],['Moral absolutes (always right/wrong)','Moral relativism (it depends)'],['Speaking up about injustice publicly','Handling it privately'],['Protecting your family at any cost','Following ethical principles']]},
+  {id:25,topic:'moral_values',name:'Moral Courage',fmt:'likely',emoji:'🦁',qs:['…speak up against an offensive joke in a group social setting?','…stand up for a stranger being treated unfairly in public?','…confront a friend about behavior they find morally wrong?','…say something uncomfortable that needs to be said rather than keep the peace?','…call out prejudice even in a family gathering?','…prioritize doing the right thing even if it costs them socially?']},
+  {id:31,topic:'money',name:'Money Habits',fmt:'likely',emoji:'💸',qs:['…be the one who checks the bank account regularly?','…make an impulse purchase without telling the other?','…remember to pay a bill on time?','…negotiate a better deal or price on a purchase?','…be more stressed about money?','…suggest saving for something specific vs. spending now?','…be more generous with money toward others?']},
+  {id:33,topic:'money',name:'Spending vs. Saving',fmt:'tot',emoji:'💳',qs:[['Spend on experiences (travel, concerts)','Invest in things that last (property, savings)'],['Buy quality once','Buy cheap and replace'],['Live for today financially','Sacrifice now for a comfortable future'],['Luxury holiday once a year','Multiple budget trips'],['Rent in a great location','Buy somewhere less ideal'],['Save an emergency fund first','Invest in growth']]},
+  {id:35,topic:'money',name:'Money & Childhood',fmt:'deep',emoji:'🧸',qs:['How did money feel growing up — scarce, abundant, or never discussed?','What money habits from your childhood do you still carry today?','Did your parents fight about money? How did that shape your relationship with it?','What is the first memory you have of money?','Do you feel your childhood made you more of a spender or a saver?','Has your financial situation ever caused you shame or pride?']},
+  {id:41,topic:'know',name:'Childhood & Origins',fmt:'deep',emoji:'🧸',qs:['What is one memory from your childhood that shaped who you are in relationships?','Who was your biggest role model growing up and what did they teach you about love?','Was there a moment in your childhood where you felt truly seen and understood?','What was your biggest dream as a kid — and what happened to it?','How was affection expressed in your family growing up?','What did your family of origin teach you about love?']},
+  {id:42,topic:'know',name:'Personality & Quirks',fmt:'tot',emoji:'🧩',qs:[['Introvert','Extrovert — how do you truly recharge?'],['Planner','Spontaneous — how do you approach life?'],['Head (logic)','Heart (emotion) — how do you make decisions?'],['Morning person','Night person'],['Talker when stressed','Someone who goes quiet'],['Risk-taker','Safety-first'],['Optimist','Realist']]},
+  {id:45,topic:'know',name:'Hidden Depths',fmt:'nhie',emoji:'🔍',qs:['…told my partner something about my past that I\'d never shared with anyone before.','…pretended to like something my partner loves just to connect with them.','…surprised myself by doing something I never thought I was capable of.','…kept a secret about myself that I\'m still not ready to share.','…felt my partner saw a side of me that even I hadn\'t noticed.','…changed a deeply held belief because of something my partner said or showed me.']},
+  {id:50,topic:'know',name:'The Small Things',fmt:'likely',emoji:'🔎',qs:['…remember the exact outfit the other wore on their first date?','…know the other\'s coffee or tea order by heart?','…notice when the other has had a bad day before they say a word?','…remember a small detail the other mentioned months ago?','…laugh first in a funny situation?','…get emotionally invested in a TV show character?','…be the first to break into a song during a car ride?']},
+  {id:51,topic:'travel',name:'Travel Styles',fmt:'tot',emoji:'🧳',qs:[['Plan every detail in advance','Book a flight and figure it out'],['Luxury hotel','Authentic local guesthouse'],['Beach destination','Cultural city'],['One long trip per year','Several short weekend breaks'],['Known tourist spots','Off-the-beaten-path hidden gems'],['Road trip','Fly and explore'],['Travel light (carry-on only)','Pack everything just in case']]},
+  {id:52,topic:'travel',name:'Travel Habits',fmt:'likely',emoji:'✈️',qs:['…overpack and then complain about carrying it?','…get to the airport dangerously late?','…get into an argument about directions?','…be doing all the research and planning before the trip?','…be hungry and grumpy in transit?','…talk to strangers and make new friends on a trip?','…take the most photos?','…want to see "one more thing" when everyone else is exhausted?']},
+  {id:61,topic:'family',name:'Children & Parenting',fmt:'discuss',emoji:'👶',qs:['Do you both want children? How many? When?','How do you align on parenting styles — strict vs. permissive?','How would you handle a difference in opinion on a major parenting decision?','What values do you most want to pass on to your children?','How would you handle a child who is very different from either of you?','What does co-parenting responsibility look like to you?']},
+  {id:66,topic:'family',name:'Parenting Styles',fmt:'tot',emoji:'🍼',qs:[['Strict structure and rules','Relaxed and child-led parenting'],['Religious upbringing','Secular with open conversation about beliefs'],['Private school','Public school'],['Stay-at-home parent','Both parents working'],['Helicopter parenting','Free-range parenting'],['Pocket money with responsibility','Provide everything freely']]},
+  {id:71,topic:'hobbies',name:'Shared Hobbies',fmt:'discuss',emoji:'🎯',qs:['Is there a hobby you\'ve always wanted to try with your partner but never have?','Do you have enough shared activities that you genuinely both enjoy?','Is there a hobby of your partner\'s you\'ve tried to love but just can\'t?','How do you balance time for individual hobbies vs. couple hobbies?','Could you see yourselves starting a creative project or business together?','Is there a hobby from your past you\'ve abandoned that you\'d like to revisit?']},
+  {id:77,topic:'hobbies',name:'Entertainment & Pop Culture',fmt:'likely',emoji:'🎬',qs:['…binge an entire TV series in one weekend?','…start a new show without waiting for the other?','…cry during a movie or series?','…know all the lyrics to a guilty pleasure song?','…spend hours on YouTube or social media falling into a rabbit hole?','…be more into video games?','…have a running list of recommended films and shows to watch?']},
+  {id:81,topic:'lifestyle',name:'Daily Routines',fmt:'tot',emoji:'☀️',qs:[['Morning workout','Evening workout'],['Slow morning with coffee','Jump straight into work'],['Cook a fresh meal every night','Meal prep for the week'],['Wind down with a show','Read before sleeping'],['Phone-free mornings','Scroll immediately on waking'],['Early to bed, early to rise','Night owl and slow morning']]},
+  {id:84,topic:'lifestyle',name:'City vs. Nature',fmt:'wyr',emoji:'🌿',qs:[['live in the heart of a vibrant city','in a quiet house surrounded by nature'],['have a small minimalist apartment','a large house with more maintenance'],['live abroad in a foreign country for a year','stay rooted in your home city'],['own a home','always rent and have flexibility'],['live somewhere warm year-round','have all four distinct seasons'],['have no car and walk everywhere','live somewhere that requires driving']]},
+  {id:91,topic:'food',name:'Food Personalities',fmt:'likely',emoji:'🍽️',qs:['…finish the other\'s plate without asking?','…suggest dessert every time?','…be the one who researches restaurants before a trip?','…try the most unusual dish on the menu?','…complain about a bad meal?','…be the better cook?','…snack the most at home?','…order delivery instead of cooking when tired?']},
+  {id:93,topic:'food',name:'Flavor Profiles',fmt:'tot',emoji:'🌶️',qs:[['Spicy 🌶️','Mild and comforting'],['Sweet 🍰','Savory 🧀'],['Home cooking','Restaurant dining'],['Fast food guilty pleasure','Always eating clean'],['Fine dining','Street food'],['Breakfast as the best meal','Dinner is the main event']]},
+  {id:97,topic:'food',name:'Food Philosophy',fmt:'agree',emoji:'🍴',qs:['Cooking for your partner is one of the most intimate and loving acts.','Couples who eat together regularly have stronger relationships.','Sharing food from the same plate is a sign of real intimacy and comfort.','Everyone should know how to cook at least a few meals well.','Food allergies and dietary restrictions should be fully respected by a partner.','Where you take someone for a first meal says a lot about who you are.']},
+];
+
+// ── STATE ──
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||def()}catch{return def()}}
+function def(){return{authed:false,name:'',avatar:'',status:'',partnerName:'',partnerAvatar:'',partnerOnline:false,pairCode:gc(),paired:false,pairedCode:'',daysStart:null,streak:0,matchScore:null,completed:[],quizHistory:[],messages:{}}}
+function save(){localStorage.setItem(KEY,JSON.stringify(S))}
+function gc(){return Math.random().toString(36).slice(2,8).toUpperCase()}
+
+// ── MODALS ──
+let sapAv='';
+function openM(id,type){
+  document.getElementById(id).classList.add('open');
+  if(id==='am')renderAuth(type||'signup');
+  if(id==='pm'){document.getElementById('mycode').textContent=S.pairCode;document.getElementById('pstat').textContent='';document.getElementById('codeinp').value=''}
+}
+function closeM(id){document.getElementById(id).classList.remove('open')}
+function closeOut(e,id){if(e.target.id===id)closeM(id)}
+
+function renderAuth(t){
+  const c=document.getElementById('ac');
+  if(t==='signup'){
+    c.innerHTML=`<div class="handle"></div><h2 class="mtitle">Create your account 💕</h2>
+    <div class="av-up"><div class="av-circ" onclick="document.getElementById('sav').click()" id="savc"><span style="font-size:2rem">🧑</span><div class="cam-b">📷</div><input type="file" id="sav" accept="image/*" onchange="prevSAv(event)"></div><span style="font-family:var(--fm);font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;color:oklch(0.6 0.04 320)">Tap to add a photo</span></div>
+    <div class="field"><label>Your name</label><input id="sname" placeholder="e.g. Alex" autocomplete="name"></div>
+    <div class="field"><label>Email</label><input type="email" id="semail" placeholder="you@example.com"></div>
+    <div class="field"><label>Password</label><input type="password" id="spw" placeholder="••••••••"></div>
+    <button class="btn btn-r" onclick="doSignup()" style="margin-top:.5rem">Create account ✨</button>
+    <button class="btn btn-c" onclick="doGoogle()" style="margin-top:.5rem">🔍 Continue with Google</button>
+    <button class="btn-g" onclick="renderAuth('login')" style="display:block;text-align:center;margin-top:.75rem;width:100%">Already have an account? Sign in</button>`;
+  } else {
+    c.innerHTML=`<div class="handle"></div><h2 class="mtitle">Welcome back 💕</h2>
+    <div class="field"><label>Email</label><input type="email" placeholder="you@example.com"></div>
+    <div class="field"><label>Password</label><input type="password" placeholder="••••••••"></div>
+    <button class="btn btn-r" onclick="doLogin()" style="margin-top:.5rem">Sign in ✨</button>
+    <button class="btn btn-c" onclick="doGoogle()" style="margin-top:.5rem">🔍 Continue with Google</button>
+    <button class="btn-g" onclick="renderAuth('signup')" style="display:block;text-align:center;margin-top:.75rem;width:100%">Don't have an account? Sign up</button>`;
+  }
+}
+function prevSAv(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{sapAv=ev.target.result;const c=document.getElementById('savc');c.innerHTML=`<img src="${ev.target.result}"><div class="cam-b">📷</div><input type="file" id="sav" accept="image/*" onchange="prevSAv(event)">`};r.readAsDataURL(f)}
+function doSignup(){const n=document.getElementById('sname').value.trim();if(!n){alert('Please enter your name!');return}S.name=n;S.avatar=sapAv||'';S.authed=true;if(!S.daysStart)S.daysStart=Date.now();save();closeM('am');launch()}
+function doLogin(){S.authed=true;if(!S.daysStart)S.daysStart=Date.now();save();closeM('am');launch()}
+function doGoogle(){const ns=['Alex','Sam','Jordan','Taylor','Riley','Emma','Liam'];if(!S.name)S.name=ns[Math.floor(Math.random()*ns.length)];S.authed=true;if(!S.daysStart)S.daysStart=Date.now();save();closeM('am');launch()}
+
+function launch(){
+  document.getElementById('sw').classList.remove('active');
+  document.getElementById('sa').classList.add('active');
+  msgs=S.messages||{};
+  fbSetup();
+  renderAll();
+  setTimeout(()=>openM('pm'),700);
+}
+
+// ── PAIR ──
+function connectPartner(){
+  const c=document.getElementById('codeinp').value.trim().toUpperCase();
+  const fb=document.getElementById('pstat');
+  if(c.length<4){fb.className='pstatus err';fb.textContent='❌ Enter a valid code!';return}
+  if(c===S.pairCode){fb.className='pstatus err';fb.textContent='❌ That is your own code!';return}
+  fb.className='pstatus';fb.textContent='🔄 Connecting via Firebase…';
+  runWhenFbReady(()=>{
+    FB.get(FB.ref('users/'+c)).then(snap=>{
+      const d=snap.val();
+      S.paired=true;S.pairedCode=c;
+      if(d){S.partnerName=d.name||S.partnerName||'Partner';S.partnerAvatar=d.avatar||'';}
+      if(!S.partnerName){const ns=['Mia','Leo','Jade','Kai','Rose','Max','Zoe','Sam'];S.partnerName=ns[Math.floor(Math.random()*ns.length)];}
+      save();fbListenPartner(c);
+      if(myRef) FB.update(myRef,{paired:true,pairedWith:c});
+      fb.className='pstatus ok';fb.textContent='💕 Paired with '+S.partnerName+'! Real-time sync active!';
+      setTimeout(()=>{closeM('pm');renderAll()},1200);
+    }).catch(()=>{
+      S.paired=true;S.pairedCode=c;
+      if(!S.partnerName){const ns=['Mia','Leo','Jade','Kai','Rose','Max','Zoe','Sam'];S.partnerName=ns[Math.floor(Math.random()*ns.length)];}
+      save();fb.className='pstatus ok';fb.textContent='💕 Paired!';
+      setTimeout(()=>{closeM('pm');renderAll()},900);
+    });
+  });
+}
+
+// ── RENDER ──
+function renderAll(){updateTopbar();renderHero();renderChips();renderQList(null);renderCats();renderDiscuss();renderProfile()}
+function updateTopbar(){
+  const av=document.getElementById('tpavc'),nm=document.getElementById('tpnm'),dot=document.getElementById('tpdot');
+  if(S.paired&&S.partnerName){nm.textContent=S.partnerName;dot.style.display='inline-block';av.innerHTML=S.partnerAvatar?`<img src="${S.partnerAvatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:S.partnerName[0]}
+  else{nm.textContent='Pair up';dot.style.display='none';av.innerHTML='?'}
+}
+function renderHero(){
+  const days=S.daysStart?Math.floor((Date.now()-S.daysStart)/864e5):0;
+  document.getElementById('hdays').textContent=days;
+  document.getElementById('hdlbl').textContent=S.daysStart?'days together':'tap to set anniversary';
+  document.getElementById('hstr').textContent=S.streak||0;
+  const mw=document.getElementById('hmwrap');
+  if(S.matchScore!=null){mw.style.display='inline';document.getElementById('hm').textContent=S.matchScore}else mw.style.display='none';
+  const me=document.getElementById('hmec');
+  me.innerHTML=S.avatar?`<img src="${S.avatar}" style="width:84px;height:84px;object-fit:cover;border-radius:50%">`:S.name?S.name[0].toUpperCase():'🧑';
+  document.getElementById('hmen').textContent=S.name||'You';
+  const pt=document.getElementById('hptc');
+  pt.innerHTML=(S.paired&&S.partnerAvatar)?`<img src="${S.partnerAvatar}" style="width:84px;height:84px;object-fit:cover;border-radius:50%">`:S.paired?(S.partnerName?S.partnerName[0]:'🧑'):'🧑';
+  document.getElementById('hptn').textContent=S.paired?(S.partnerName||'Partner'):'Pair up';
+}
+let activeTopic=null;
+function renderChips(){
+  document.getElementById('tchips').innerHTML=`<button class="chip on" onclick="filterT(null,this)">✨ All</button>`+TOPICS.map(t=>`<button class="chip" onclick="filterT('${t.id}',this)">${t.label}</button>`).join('');
+}
+function filterT(tid,el){document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));el.classList.add('on');activeTopic=tid;renderQList(tid);document.getElementById('qlt').textContent=tid?(TOPICS.find(t=>t.id===tid)?.label||'Quizzes'):'All quizzes'}
+function shuffleQ(){const el=document.getElementById('qlist');const cs=[...el.children];for(let i=cs.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));el.appendChild(cs[j])}}
+function avHTML(src,name,size=100){return src?`<img src="${src}" style="width:${size}%;height:${size}%;object-fit:cover;border-radius:50%">`:name?name[0]:'🧑'}
+function renderQList(tid){
+  const list=tid?QUIZZES.filter(q=>q.topic===tid):QUIZZES;
+  document.getElementById('qlist').innerHTML=list.map(q=>{
+    const f=FMT[q.fmt];const done=S.completed.includes(q.id);const g=TGRAD[q.topic]||'rose';
+    return`<div class="qcard grad-${g}" onclick="startQ(${q.id})">
+      <div class="cyber"></div><div class="qblob"></div>
+      <div class="qem">${q.emoji}</div>
+      <div class="qi"><div class="qn">${q.name}</div>
+        <div class="qm"><span class="ftag">${f.i} ${f.l}</span><span style="font-family:var(--fm)">${q.qs.length}Q</span></div>
+      </div>
+      <div class="qr">
+        <div class="avst"><div class="avx">${avHTML(S.avatar,S.name)}</div><div class="avx">${avHTML(S.partnerAvatar,S.partnerName)}</div></div>
+        ${done?'<span class="dtag">✓ Done</span>':'<span class="ntag">New</span>'}
+      </div>
+    </div>`;
+  }).join('');
+}
+function renderCats(){
+  document.getElementById('catscroll').innerHTML=TOPICS.map(t=>`<div class="qcard grad-${t.color}" style="flex-shrink:0;width:7rem;height:8rem;flex-direction:column;align-items:center;justify-content:space-between;padding:.75rem" onclick="filterT('${t.id}',document.querySelector('.chip'))">
+    <div class="cyber"></div><span style="font-size:2rem;position:relative">${t.label.split(' ')[0]}</span>
+    <span style="font-size:.72rem;font-weight:600;position:relative;text-align:center;line-height:1.2">${t.label.replace(/^[^\s]+\s/,'')}</span>
+  </div>`).join('');
+}
+function showTab(t){
+  document.getElementById('sp').classList.remove('active');document.getElementById('sa').classList.add('active');
+  ['home','activities','discuss','profile'].forEach(x=>{document.getElementById('tab-'+x).style.display=x===t?'block':'none';document.getElementById('n-'+x).classList.toggle('active',x===t)});
+  if(t==='discuss')renderDiscuss();if(t==='profile')renderProfile();
+}
+
+// ── QUIZ PLAY ──
+function startQ(id){
+  CQ=QUIZZES.find(q=>q.id===id);if(!CQ)return;
+  CQi=0;myA=[];ptA=[];CQs=CQ.qs;
+  document.getElementById('sa').classList.remove('active');document.getElementById('sp').classList.add('active');
+  document.getElementById('pttitle').textContent=CQ.emoji+' '+CQ.name;
+  fbListenChat(CQ.id);renderQ();
+}
+function renderQ(){
+  const q=CQs[CQi],total=CQs.length,fmt=CQ.fmt;
+  document.getElementById('pfill').style.width=Math.round((CQi/total)*100)+'%';
+  document.getElementById('pctxt').textContent=(CQi+1)+'/'+total;
+  const body=document.getElementById('pbody');
+  let h=`<div class="qa"><div class="qlbl">Question ${CQi+1} of ${total}</div>`;
+  if(fmt==='likely'){
+    h+=`<div class="qprompt">Who is more likely to…<br><em>${q}</em></div>
+    <div class="lrow">
+      <button class="lbtn" onclick="pickA('ME',this)"><div class="lav">${avHTML(S.avatar,S.name)}</div><span style="font-size:.85rem;font-weight:600;color:var(--fg)">${S.name||'Me'}</span></button>
+      <button class="lbtn" onclick="pickA('PARTNER',this)"><div class="lav" style="background:var(--grad-cyan)">${avHTML(S.partnerAvatar,S.partnerName)}</div><span style="font-size:.85rem;font-weight:600;color:var(--fg)">${S.partnerName||'Partner'}</span></button>
+    </div>`;
+  } else if(fmt==='tot'){
+    h+=`<div class="qprompt">⚡ This or That?</div><div class="trow">
+      <button class="tbtn" data-v="${q[0]}" onclick="pickA(this.dataset.v,this)">${q[0]}</button><span class="tvor">OR</span>
+      <button class="tbtn" data-v="${q[1]}" onclick="pickA(this.dataset.v,this)">${q[1]}</button></div>`;
+  } else if(fmt==='wyr'){
+    h+=`<div class="qprompt">💭 Would you rather…</div><div class="wlist">
+      <button class="wbtn" data-v="${q[0]}" onclick="pickA(this.dataset.v,this)">👈 ${q[0]}</button>
+      <button class="wbtn" data-v="${q[1]}" onclick="pickA(this.dataset.v,this)">👉 ${q[1]}</button></div>`;
+  } else if(fmt==='agree'){
+    h+=`<div class="qprompt">${q}</div><div class="agrid">
+      <button class="abtn" onclick="pickA('Strongly Agree',this)">Strongly Agree</button>
+      <button class="abtn" onclick="pickA('Agree',this)">Agree</button>
+      <button class="abtn" onclick="pickA('Disagree',this)">Disagree</button>
+      <button class="abtn" onclick="pickA('Strongly Disagree',this)">Strongly Disagree</button></div>`;
+  } else if(fmt==='nhie'){
+    h+=`<div class="qprompt">🙈 Never have I ever…<br><em>${q}</em></div><div class="nrow">
+      <button class="nbtn nhave" onclick="pickA('I HAVE',this)">✋ I Have</button>
+      <button class="nbtn nnever" onclick="pickA('NEVER',this)">🙈 Never</button></div>`;
+  } else {
+    if(fmt==='photo')h+=`<div class="photocard"><div style="font-size:2rem;margin-bottom:.5rem">📸</div><p style="font-size:.9rem;font-style:italic;color:rgba(255,255,255,.9)">${q}</p><p style="font-size:.75rem;color:rgba(255,255,255,.7);margin-top:.5rem">Grab your phone, find a photo, and show each other!</p></div>`;
+    else h+=`<div class="qprompt">${fmt==='deep'?'💡':'🗣️'} ${q}</div>`;
+    h+=`<div class="ocard"><div class="olbl">Your answer (take 2–3 mins each):</div><textarea id="oans" placeholder="${fmt==='photo'?'Describe your photo...':'Share your thoughts openly...'}"></textarea></div>
+    <button class="btn btn-r" onclick="pickOpen()">Share & Continue →</button>`;
+  }
+  h+=`<div id="rarea"></div></div>`;
+  body.innerHTML=h;body.scrollTo(0,0);
+}
+function pickA(val,btn){
+  const con=btn.closest('.lrow,.trow,.agrid,.wlist,.nrow');
+  if(con)con.querySelectorAll('button').forEach(b=>b.disabled=true);
+  btn.classList.add('sel');myA.push(val);
+  const ptVal=genPt();ptA.push(ptVal);
+  showReveal(val,ptVal);
+  setTimeout(()=>nextQ(),2200);
+}
+function pickOpen(){
+  const t=(document.getElementById('oans')?.value||'').trim();myA.push(t||'(shared)');
+  const rps=['Interesting perspective! 😊','I feel similarly...','That\'s so you 😊','Love that you shared that ❤️'];
+  ptA.push(rps[Math.floor(Math.random()*rps.length)]);setTimeout(()=>nextQ(),300);
+}
+function genPt(){
+  const q=CQs[CQi],fmt=CQ.fmt;
+  if(fmt==='likely')return Math.random()>.5?'ME':'PARTNER';
+  if(fmt==='tot'||fmt==='wyr')return Array.isArray(q)?q[Math.floor(Math.random()*2)]:'';
+  if(fmt==='agree'){const o=['Strongly Agree','Agree','Disagree','Strongly Disagree'];return o[Math.floor(Math.random()*4)]}
+  if(fmt==='nhie')return Math.random()>.5?'I HAVE':'NEVER';
+  return '';
+}
+function showReveal(my,pt){
+  const match=my===pt;
+  document.getElementById('rarea').innerHTML=`<div class="revcard">
+    <div class="revlbl">Answers revealed</div>
+    <div class="revrow"><div class="revav">${avHTML(S.avatar,S.name)}</div><div class="rans"><strong>${S.name||'You'}:</strong> ${my}</div></div>
+    <div class="revrow"><div class="revav" style="background:var(--grad-cyan)">${avHTML(S.partnerAvatar,S.partnerName)}</div><div class="rans"><strong>${S.partnerName||'Partner'}:</strong> ${pt}</div></div>
+    ${match?'<div class="mpill">✓ You matched! 💕</div>':''}
+  </div>`;
+}
+function nextQ(){CQi++;if(CQi>=CQs.length)finishQ();else renderQ()}
+function finishQ(){
+  const matched=myA.filter((a,i)=>a===ptA[i]).length,pct=Math.round((matched/myA.length)*100);
+  if(!S.completed.includes(CQ.id))S.completed.push(CQ.id);
+  S.streak=(S.streak||0)+1;S.matchScore=pct;
+  const entry={id:CQ.id,name:CQ.name,emoji:CQ.emoji,fmt:CQ.fmt,date:Date.now(),matched,total:myA.length,pct,myA:[...myA],ptA:[...ptA],qs:[...CQs]};
+  S.quizHistory=[entry,...(S.quizHistory||[])].slice(0,50);
+  if(!msgs[CQ.id])msgs[CQ.id]=[];S.messages=msgs;save();
+  document.getElementById('pfill').style.width='100%';
+  const items=CQs.map((q,i)=>{const ql=Array.isArray(q)?q.join(' OR '):q;const same=myA[i]===ptA[i];
+    return`<div class="aitem"><div class="aq">${ql.length>60?ql.slice(0,60)+'…':ql}</div>
+    <div class="achips"><span class="achip ${same?'m':'d'}">${S.name||'You'}: ${(myA[i]||'').slice(0,30)}</span>
+    <span class="achip p">${S.partnerName||'Partner'}: ${(ptA[i]||'').slice(0,30)}</span></div></div>`;
+  }).join('');
+  document.getElementById('pbody').innerHTML=`<div class="finwrap">
+    <span class="finem">${pct>=80?'💞':pct>=50?'💛':'💙'}</span>
+    <div class="finpct">${pct}% match!</div>
+    <p class="finsub">${matched} of ${myA.length} answers aligned${pct>=80?' — in sync! 🎉':pct>=50?' — great connection!':', beautifully different!'}</p>
+    <div class="acard"><div class="albl">All answers</div>${items}</div>
+    <div class="dcard"><div class="dtitle">💬 Discuss this quiz</div>
+      <div class="msgs" id="fmsgs" style="display:flex;flex-direction:column;gap:.4rem"></div>
+      <div class="crow2"><input class="cinput" id="finp" placeholder="Share your thoughts..." onkeydown="if(event.key==='Enter')sendFin()">
+      <button class="csend" onclick="sendFin()">➤</button></div>
+    </div>
+    <button class="btn btn-r" onclick="exitPlay()">Back to quizzes 💕</button>
+  </div>`;
+  renderFMsgs();
+}
+function renderFMsgs(){
+  const el=document.getElementById('fmsgs');if(!el)return;
+  const m=(msgs||{})[CQ?.id]||[];
+  el.innerHTML=m.length?m.map(mg=>`<div class="bub ${mg.from==='me'?'me':'pt'}">${mg.text}</div>`).join(''):'<div class="emsg">Start the conversation! 💬</div>';
+  el.scrollTop=el.scrollHeight;
+}
+function sendFin(){
+  const inp=document.getElementById('finp');if(!inp)return;const t=inp.value.trim();if(!t)return;
+  const qid=CQ?.id;if(!qid)return;
+  if(!msgs[qid])msgs[qid]=[];
+  msgs[qid].push({from:'me',text:t,time:Date.now()});
+  inp.value='';S.messages=msgs;save();renderFMsgs();
+  fbSendChat(qid,t,'me');
+  if(!S.paired){setTimeout(()=>{const rps=['So true!','I see your point 😊','That surprised me!','Let\'s talk more 💕','Haha I love you!'];msgs[qid].push({from:'pt',text:rps[Math.floor(Math.random()*rps.length)],time:Date.now()});S.messages=msgs;save();renderFMsgs()},1500)}
+}
+function exitPlay(){document.getElementById('sp').classList.remove('active');document.getElementById('sa').classList.add('active');showTab('home');renderAll()}
+
+// ── DISCUSS TAB ──
+function renderDiscuss(){
+  const h=S.quizHistory||[];
+  document.getElementById('dempty').style.display=h.length?'none':'flex';
+  document.getElementById('dlist').innerHTML=h.map(r=>{
+    const m=(msgs||{})[r.id]||[];
+    return`<div class="dqc">
+      <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem">
+        <span style="font-size:1.25rem">${r.emoji}</span><span style="flex:1;font-size:.88rem;font-weight:600">${r.name}</span>
+        <span style="font-family:var(--fm);font-size:.65rem;text-transform:uppercase;color:var(--muted)">${m.length} msg</span>
+      </div>
+      <div class="msgs" style="display:flex;flex-direction:column;gap:.35rem">${m.length?m.map(mg=>`<div class="bub ${mg.from==='me'?'me':'pt'}" style="font-size:.72rem">${mg.text}</div>`).join(''):'<div class="emsg" style="font-size:.72rem">No messages yet</div>'}</div>
+      <div class="crow2" style="margin-top:.5rem">
+        <input class="cinput" id="dc${r.id}" placeholder="Add a comment..." style="font-size:.75rem" onkeydown="if(event.key==='Enter')sendDC(${r.id})">
+        <button class="csend" style="width:1.85rem;height:1.85rem;font-size:.8rem" onclick="sendDC(${r.id})">➤</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function sendDC(qid){
+  const inp=document.getElementById('dc'+qid);if(!inp)return;const t=inp.value.trim();if(!t)return;
+  if(!msgs[qid])msgs[qid]=[];msgs[qid].push({from:'me',text:t,time:Date.now()});
+  inp.value='';S.messages=msgs;save();fbSendChat(qid,t,'me');
+  if(!S.paired){setTimeout(()=>{const rps=['So true!','That\'s fair!','I love you ❤️','Agree!','Interesting...'];msgs[qid].push({from:'pt',text:rps[Math.floor(Math.random()*rps.length)],time:Date.now()});S.messages=msgs;save();renderDiscuss()},1500)}
+  renderDiscuss();
+}
+
+// ── PROFILE ──
+function renderProfile(){
+  document.getElementById('pfname').textContent=S.name||'Your name';
+  document.getElementById('pfstatus').textContent=S.status?`"${S.status}"`:'Tap to add a status...';
+  const days=S.daysStart?Math.floor((Date.now()-S.daysStart)/864e5):0;
+  document.getElementById('pfdays').textContent=days>0?`Together for ${days} days 💕`:'Set your anniversary below';
+  document.getElementById('stq').textContent=S.completed.length;
+  document.getElementById('sts').textContent=S.streak||0;
+  document.getElementById('stm').textContent=S.matchScore!=null?S.matchScore+'%':'—';
+  const av=document.getElementById('pfavc');
+  av.innerHTML=S.avatar?`<img src="${S.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:S.name?S.name[0].toUpperCase():'🧑';
+  document.getElementById('datelbl').textContent=S.daysStart?`Anniversary: ${new Date(S.daysStart).toLocaleDateString()}`:'Set anniversary date';
+  document.getElementById('pairlbl').textContent=S.paired?`Paired with ${S.partnerName}`:'Pair code';
+}
+function chAv(){document.getElementById('pffile').click()}
+function handleAv(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{S.avatar=ev.target.result;save();fbUpdate('users/'+S.pairCode,{avatar:S.avatar,name:S.name});renderAll()};r.readAsDataURL(f)}
+function editName(){const n=prompt('Your name:',S.name||'');if(n?.trim()){S.name=n.trim();save();fbUpdate('users/'+S.pairCode,{name:S.name});renderAll()}}
+function editStatus(){const s=prompt('What\'s your vibe right now?',S.status||'');if(s!==null){S.status=s.trim().slice(0,80);save();fbUpdate('users/'+S.pairCode,{status:S.status});renderProfile()}}
+function editDate(){const cur=S.daysStart?new Date(S.daysStart).toISOString().slice(0,10):'';const v=prompt('When did your love story start? (YYYY-MM-DD)',cur);if(!v)return;const t=Date.parse(v);if(!isNaN(t)){S.daysStart=t;save();renderAll()}}
+function installW(){alert('📱 Add to home screen:\n• iPhone: Share → "Add to Home Screen"\n• Android: Menu → "Add to Home Screen"')}
+function resetAll(){if(confirm('Sign out and reset all data?')){fbUpdate('users/'+S.pairCode,{online:false});localStorage.removeItem(KEY);location.reload()}}
+
+// ── BOOT ──
+if(S.authed){
+  document.getElementById('sw').classList.remove('active');
+  document.getElementById('sa').classList.add('active');
+  msgs=S.messages||{};
+  fbSetup();
+  renderAll();
+}
+</script>
+</body>
+</html>
