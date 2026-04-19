@@ -7,9 +7,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getDatabase, ref, set, get, update, onValue, onChildAdded, push, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
+  import { getDatabase, ref, set, get, update, onValue, onChildAdded, push, onDisconnect } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDM2jU6NsjL2UMTSmrBv93S13Sc62eDCAU",
@@ -24,10 +23,8 @@
 
   const app = initializeApp(firebaseConfig);
   const database = getDatabase(app);
-  const auth = getAuth(app);
-  const googleProvider = new GoogleAuthProvider();
 
-  // Expose Firebase helpers to window
+  // Expose Firebase helpers to window so the main script can use them
   window.FB = {
     ref: (path) => ref(database, path),
     set: (r, v) => set(r, v),
@@ -40,18 +37,9 @@
     off: (r) => { try { r.off && r.off() } catch(e){} }
   };
 
-  // Expose auth functions
-  window.AUTH = {
-    signUp: (email, pass) => createUserWithEmailAndPassword(auth, email, pass),
-    signIn: (email, pass) => signInWithEmailAndPassword(auth, email, pass),
-    google: () => signInWithPopup(auth, googleProvider),
-    signOut: () => signOut(auth),
-    updateProfile: (user, data) => updateProfile(user, data),
-    onAuthStateChanged: (cb) => onAuthStateChanged(auth, cb)
-  };
-
   window.fbReady = true;
-  console.log("✅ Firebase v10 ready");
+  console.log("✅ Firebase module ready");
+  // Fire any queued setup
   if(window._fbQueue) window._fbQueue.forEach(fn => fn());
 </script>
 
@@ -456,7 +444,13 @@ function fbSetup(){
     const disc = FB.onDisconnect(r);
     disc.update({online:false,ts:Date.now()});
     myRef = r;
-    if(S.paired&&S.pairedCode) fbListenPartner(S.pairedCode);
+    if(S.paired&&S.pairedCode){
+      FB.get(FB.ref('users/'+S.pairedCode)).then(snap=>{
+        const d=snap.val();
+        if(d){S.partnerName=d.name||S.partnerName;S.partnerAvatar=d.avatar||S.partnerAvatar;save();updateTopbar();renderHero();}
+      }).catch(()=>{});
+      fbListenPartner(S.pairedCode);
+    }
   });
 }
 function fbUpdate(path,data){
@@ -485,21 +479,27 @@ function fbSendChat(qid,text){
   if(!S.paired||!S.pairedCode)return;
   runWhenFbReady(()=>{
     const room=[S.pairCode,S.pairedCode].sort().join('_');
-    FB.push(FB.ref('chats/'+room+'/'+qid),{from,text,time:Date.now()});
+    FB.push(FB.ref('chats/'+room+'/'+qid),{senderId:S.pairCode,senderName:S.name||'You',text,time:Date.now()});
   });
 }
+const _chatListened={};
 function fbListenChat(qid){
   if(!S.paired||!S.pairedCode)return;
+  if(_chatListened[qid])return;
+  _chatListened[qid]=true;
   runWhenFbReady(()=>{
     const room=[S.pairCode,S.pairedCode].sort().join('_');
+    const seenKeys=new Set();
     FB.onChildAdded(FB.ref('chats/'+room+'/'+qid), snap=>{
+      if(seenKeys.has(snap.key))return;
+      seenKeys.add(snap.key);
       const m=snap.val();
+      m.isMe=(m.senderId===S.pairCode);
       if(!msgs[qid])msgs[qid]=[];
-      const dup=msgs[qid].some(x=>x.time===m.time&&x.text===m.text);
-      if(!dup){msgs[qid].push(m);S.messages=msgs;save();renderDiscuss();
-        const el=document.getElementById('fmsgs');
-        if(el){el.innerHTML=msgs[qid].map(mg=>`<div class="bub ${mg.isMe?'me':'pt'}"><span style="font-size:.65rem;opacity:.6">${mg.isMe?'You':mg.senderName||'Partner'}</span><br>${mg.text}</div>`).join('');el.scrollTop=el.scrollHeight;}
-      }
+      msgs[qid].push(m);S.messages=msgs;save();
+      renderDiscuss();
+      const el=document.getElementById('fmsgs');
+      if(el){el.innerHTML=msgs[qid].map(mg=>`<div class="bub ${mg.isMe?'me':'pt'}" style="margin-bottom:.3rem"><span style="font-size:.65rem;opacity:.6">${mg.isMe?'You':mg.senderName||'Partner'}</span><br>${mg.text}</div>`).join('');el.scrollTop=el.scrollHeight;}
     });
   });
 }
@@ -588,43 +588,9 @@ function renderAuth(t){
   }
 }
 function prevSAv(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{sapAv=ev.target.result;const c=document.getElementById('savc');c.innerHTML=`<img src="${ev.target.result}"><div class="cam-b">📷</div><input type="file" id="sav" accept="image/*" onchange="prevSAv(event)">`};r.readAsDataURL(f)}
-function showAuthErr(msg){let e=document.getElementById('autherr');if(!e){e=document.createElement('p');e.id='autherr';e.style.cssText='color:oklch(0.65 0.25 25);font-size:.8rem;margin-top:.5rem;text-align:center';document.getElementById('ac').appendChild(e)}e.textContent=msg}
-function clearAuthErr(){const e=document.getElementById('autherr');if(e)e.textContent=''}
-async function doSignup(){
-  const n=document.getElementById('sname')?.value.trim();
-  const em=document.getElementById('semail')?.value.trim();
-  const pw=document.getElementById('spw')?.value;
-  clearAuthErr();
-  if(!n){showAuthErr('Please enter your name!');return}
-  if(!em||!pw){showAuthErr('Please enter email and password');return}
-  if(pw.length<6){showAuthErr('Password must be at least 6 characters');return}
-  try{
-    const cred=await window.AUTH.signUp(em,pw);
-    await window.AUTH.updateProfile(cred.user,{displayName:n});
-    S.name=n;S.avatar=sapAv||'';S.authed=true;if(!S.daysStart)S.daysStart=Date.now();save();closeM('am');launch();
-  }catch(e){showAuthErr(e.message.replace('Firebase: ','').replace(/\(.*\)/,''))}
-}
-async function doLogin(){
-  const em=document.querySelector('#ac input[type=email]')?.value.trim();
-  const pw=document.querySelector('#ac input[type=password]')?.value;
-  clearAuthErr();
-  if(!em||!pw){showAuthErr('Please enter your email and password');return}
-  try{
-    const cred=await window.AUTH.signIn(em,pw);
-    if(cred.user.displayName)S.name=cred.user.displayName;
-    S.authed=true;if(!S.daysStart)S.daysStart=Date.now();save();closeM('am');launch();
-  }catch(e){showAuthErr(e.message.replace('Firebase: ','').replace(/\(.*\)/,''))}
-}
-async function doGoogle(){
-  clearAuthErr();
-  try{
-    const cred=await window.AUTH.google();
-    const user=cred.user;
-    if(!S.name&&user.displayName)S.name=user.displayName;
-    if(!S.avatar&&user.photoURL)S.avatar=user.photoURL;
-    S.authed=true;if(!S.daysStart)S.daysStart=Date.now();save();closeM('am');launch();
-  }catch(e){showAuthErr('Google sign-in failed. Make sure pop-ups are allowed. '+e.message.replace('Firebase: ','').replace(/\(.*\)/,''))}
-}
+function doSignup(){const n=document.getElementById('sname').value.trim();if(!n){alert('Please enter your name!');return}S.name=n;S.avatar=sapAv||'';S.authed=true;if(!S.daysStart)S.daysStart=Date.now();save();closeM('am');launch()}
+function doLogin(){S.authed=true;if(!S.daysStart)S.daysStart=Date.now();save();closeM('am');launch()}
+function doGoogle(){const ns=['Alex','Sam','Jordan','Taylor','Riley','Emma','Liam'];if(!S.name)S.name=ns[Math.floor(Math.random()*ns.length)];S.authed=true;if(!S.daysStart)S.daysStart=Date.now();save();closeM('am');launch()}
 
 function launch(){
   document.getElementById('sw').classList.remove('active');
@@ -632,7 +598,7 @@ function launch(){
   msgs=S.messages||{};
   fbSetup();
   renderAll();
-  setTimeout(()=>openM('pm'),700);
+  if(!S.paired) setTimeout(()=>openM('pm'),700);
 }
 
 // ── PAIR ──
@@ -645,18 +611,19 @@ function connectPartner(){
   runWhenFbReady(()=>{
     FB.get(FB.ref('users/'+c)).then(snap=>{
       const d=snap.val();
+      if(!d){fb.className='pstatus err';fb.textContent='❌ Code not found — ask your partner to open the app first!';return;}
       S.paired=true;S.pairedCode=c;
-      if(d){S.partnerName=d.name||S.partnerName||'Partner';S.partnerAvatar=d.avatar||'';}
-      if(!S.partnerName){const ns=['Mia','Leo','Jade','Kai','Rose','Max','Zoe','Sam'];S.partnerName=ns[Math.floor(Math.random()*ns.length)];}
-      save();fbListenPartner(c);
-      if(myRef) FB.update(myRef,{paired:true,pairedWith:c});
-      fb.className='pstatus ok';fb.textContent='💕 Paired with '+S.partnerName+'! Real-time sync active!';
+      S.partnerName=d.name||'Partner';
+      S.partnerAvatar=d.avatar||'';
+      save();
+      FB.update(FB.ref('users/'+S.pairCode),{paired:true,pairedWith:c,pairedName:S.partnerName});
+      FB.update(FB.ref('users/'+c),{paired:true,pairedWith:S.pairCode,pairedName:S.name});
+      fbListenPartner(c);
+      fb.className='pstatus ok';fb.textContent='💕 Paired with '+S.partnerName+'!';
       setTimeout(()=>{closeM('pm');renderAll()},1200);
-    }).catch(()=>{
-      S.paired=true;S.pairedCode=c;
-      if(!S.partnerName){const ns=['Mia','Leo','Jade','Kai','Rose','Max','Zoe','Sam'];S.partnerName=ns[Math.floor(Math.random()*ns.length)];}
-      save();fb.className='pstatus ok';fb.textContent='💕 Paired!';
-      setTimeout(()=>{closeM('pm');renderAll()},900);
+    }).catch((err)=>{
+      console.error(err);
+      fb.className='pstatus err';fb.textContent='❌ Connection error. Try again.';
     });
   });
 }
@@ -715,30 +682,21 @@ function renderCats(){
 function showTab(t){
   document.getElementById('sp').classList.remove('active');document.getElementById('sa').classList.add('active');
   ['home','activities','discuss','profile'].forEach(x=>{document.getElementById('tab-'+x).style.display=x===t?'block':'none';document.getElementById('n-'+x).classList.toggle('active',x===t)});
-  if(t==='discuss')renderDiscuss();
-  if(t==='profile')renderProfile();
-  if(t==='activities')renderActivities();
+  if(t==='discuss')renderDiscuss();if(t==='profile')renderProfile();
 }
+
 function renderActivities(){
   const h=S.quizHistory||[];
-  const el=document.getElementById('tab-activities');
-  if(!el)return;
-  if(!h.length){
-    el.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;gap:1rem;color:var(--muted);text-align:center;padding:2rem"><span style="font-size:3rem">📊</span><p style="font-weight:600">Complete a quiz to see your history!</p></div>';
-    return;
-  }
-  let html2='<div style="padding:1rem 1rem 80px"><div style="font-size:.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.75rem">Completed Quizzes — tap to review</div>';
+  const el=document.getElementById('tab-activities');if(!el)return;
+  if(!h.length){el.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;gap:1rem;color:var(--muted);text-align:center;padding:2rem"><span style="font-size:3rem">📊</span><p style="font-weight:600">Complete a quiz to see your history!</p></div>';return;}
+  let html2='<div style="padding:1rem 1rem 80px"><div style="font-size:.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.75rem">Completed Quizzes</div>';
   h.forEach((r,idx)=>{
     const g=TGRAD[QUIZZES.find(q=>q.id===r.id)?.topic]||'rose';
-    html2+='<div class="qcard grad-'+g+'" style="margin-bottom:.75rem" onclick="openReview('+idx+')"><div class="cyber"></div><div class="qblob"></div><div class="qem">'+r.emoji+'</div><div class="qi"><div class="qn">'+r.name+'</div><div class="qm"><span class="ftag">'+new Date(r.date).toLocaleDateString()+'</span><span style="font-family:var(--fm)">'+r.total+'Q</span></div></div><div class="qr"><span class="dtag">'+r.pct+'% 💕</span><span class="ntag" style="margin-top:.25rem">Review →</span></div></div>';
+    html2+='<div class="qcard grad-'+g+'" style="margin-bottom:.75rem" onclick="openReview('+idx+')"><div class="cyber"></div><div class="qblob"></div><div class="qem">'+r.emoji+'</div><div class="qi"><div class="qn">'+r.name+'</div><div class="qm"><span class="ftag">'+new Date(r.date).toLocaleDateString()+'</span></div></div><div class="qr"><span class="dtag">'+r.pct+'% 💕</span></div></div>';
   });
-  html2+='</div>';
-  el.innerHTML=html2;
+  html2+='</div>';el.innerHTML=html2;
 }
-function openReview(idx){
-  const entry=(S.quizHistory||[])[idx];
-  if(entry)reviewQuiz(entry);
-}
+function openReview(idx){const entry=(S.quizHistory||[])[idx];if(entry)reviewQuiz(entry);}
 
 // ── QUIZ PLAY ──
 function startQ(id){
@@ -757,11 +715,8 @@ function renderQ(){
   if(fmt==='likely'){
     h+=`<div class="qprompt">Who is more likely to…<br><em>${q}</em></div>
     <div class="lrow">
-      <button class="lbtn" onclick="pickA('ME',this)"><div class="lav">${avHTML(S.avatar,S.name)}</div><span style="font-size:.85rem;font-weight:600;color:var(--fg)">${S.name||'Me'}</span></button>
-      <button class="lbtn" onclick="pickA('PARTNER',this)"><div class="lav" style="background:var(--grad-cyan)">${avHTML(S.partnerAvatar,S.partnerName)}</div><span style="font-size:.85rem;font-weight:600;color:var(--fg)">${S.partnerName||'Partner'}</span></button>
-    <div style="display:flex;gap:.6rem;margin-top:.65rem">
-      <button class="lbtn" style="flex:1;padding:.6rem" onclick="pickA('Both',this)"><span style="font-size:1.2rem">💑</span><br><span style="font-size:.78rem;font-weight:600">Both</span></button>
-      <button class="lbtn" style="flex:1;padding:.6rem" onclick="pickA('Neither',this)"><span style="font-size:1.2rem">🤷</span><br><span style="font-size:.78rem;font-weight:600">Neither</span></button>
+      <button class="lbtn" onclick="pickA(S.name||'Me',this)"><div class="lav">${avHTML(S.avatar,S.name)}</div><span style="font-size:.85rem;font-weight:600;color:var(--fg)">${S.name||'Me'}</span></button>
+      <button class="lbtn" onclick="pickA(S.partnerName||'Partner',this)"><div class="lav" style="background:var(--grad-cyan)">${avHTML(S.partnerAvatar,S.partnerName)}</div><span style="font-size:.85rem;font-weight:600;color:var(--fg)">${S.partnerName||'Partner'}</span></button>
     </div>`;
   } else if(fmt==='tot'){
     h+=`<div class="qprompt">⚡ This or That?</div><div class="trow">
@@ -790,32 +745,15 @@ function renderQ(){
   h+=`<div id="rarea"></div></div>`;
   body.innerHTML=h;body.scrollTo(0,0);
 }
-function fetchPartnerAnswer(qi,cb){
-  if(S.paired&&S.pairedCode){
-    runWhenFbReady(()=>{
-      FB.get(FB.ref('quizAnswers/'+S.pairedCode+'/'+CQ.id)).then(snap=>{
-        const d=snap.val();
-        cb((d&&d[qi]!==undefined)?d[qi]:genPt());
-      }).catch(()=>cb(genPt()));
-    });
-  }else{cb(genPt());}
-}
 function pickA(val,btn){
-  // Disable all answer buttons
   btn.closest('.qa')?.querySelectorAll('.lbtn,.tbtn,.wbtn,.abtn,.nbtn').forEach(b=>b.disabled=true);
   btn.classList.add('sel');
   myA[CQi]=val;
-  // Save my answer to Firebase
   if(S.paired&&S.pairedCode){
-    runWhenFbReady(()=>{
-      FB.update(FB.ref('quizAnswers/'+S.pairCode+'/'+CQ.id),{[CQi]:val,updatedAt:Date.now()});
-    });
+    runWhenFbReady(()=>{ FB.update(FB.ref('quizAnswers/'+S.pairCode+'/'+CQ.id),{[CQi]:val,updatedAt:Date.now()}); });
   }
-  // Fetch real partner answer then reveal
   fetchPartnerAnswer(CQi,(ptVal)=>{
-    ptA[CQi]=ptVal;
-    showReveal(val,ptVal);
-    setTimeout(()=>nextQ(),2200);
+    ptA[CQi]=ptVal;showReveal(val,ptVal);setTimeout(()=>nextQ(),2200);
   });
 }
 function pickOpen(){
@@ -852,7 +790,7 @@ function finishQ(){
   const items=CQs.map((q,i)=>{const ql=Array.isArray(q)?q.join(' OR '):q;const same=myA[i]===ptA[i];
     return`<div class="aitem"><div class="aq">${ql.length>60?ql.slice(0,60)+'…':ql}</div>
     <div class="achips"><span class="achip ${same?'m':'d'}">${S.name||'You'}: ${(myA[i]||'').slice(0,30)}</span>
-    <span class="achip p">${S.partnerName||'Partner'}: ${String(ptA[i]!==undefined?ptA[i]:'—').slice(0,30)}</span></div></div>`;
+    <span class="achip p">${S.partnerName||'Partner'}: ${(ptA[i]||'').slice(0,30)}</span></div></div>`;
   }).join('');
   document.getElementById('pbody').innerHTML=`<div class="finwrap">
     <span class="finem">${pct>=80?'💞':pct>=50?'💛':'💙'}</span>
@@ -871,7 +809,7 @@ function finishQ(){
 function renderFMsgs(){
   const el=document.getElementById('fmsgs');if(!el)return;
   const m=(msgs||{})[CQ?.id]||[];
-  el.innerHTML=m.length?m.map(mg=>`<div class="bub ${mg.isMe?'me':'pt'}" style="margin-bottom:.3rem"><span style="font-size:.65rem;opacity:.6">${mg.isMe?'You':mg.senderName||'Partner'}</span><br>${mg.text}</div>`).join(''):'<div class="emsg">Start the conversation! 💬</div>';
+  el.innerHTML=m.length?m.map(mg=>`<div class="bub ${mg.isMe?'me':'pt'}">${mg.text}</div>`).join(''):'<div class="emsg">Start the conversation! 💬</div>';
   el.scrollTop=el.scrollHeight;
 }
 function sendFin(){
@@ -886,20 +824,19 @@ function sendFin(){
     setTimeout(()=>{const rps=["So true!","I see your point","That surprised me!","Let's talk more","Haha I love you!"];msgs[qid].push({isMe:false,senderName:S.partnerName||'Partner',text:rps[Math.floor(Math.random()*rps.length)],time:Date.now()});S.messages=msgs;save();renderFMsgs()},1500);
   }
 }
-function exitPlay(){document.getElementById('sp').classList.remove('active');document.getElementById('sa').classList.add('active');showTab('home');renderAll()}
 function reviewQuiz(entry){
-  if(typeof entry==='string')try{entry=JSON.parse(entry)}catch(e){return}
   CQ=QUIZZES.find(q=>q.id===entry.id);if(!CQ)return;
   CQs=entry.qs;myA=entry.myA;ptA=entry.ptA;
-  const matched=entry.matched,pct=entry.pct;
+  const pct=entry.pct,matched=entry.matched;
   document.getElementById('sa').classList.remove('active');document.getElementById('sp').classList.add('active');
   document.getElementById('pttitle').textContent=CQ.emoji+' '+CQ.name+' — Results';
   document.getElementById('pfill').style.width='100%';
   const items=CQs.map((q,i)=>{const ql=Array.isArray(q)?q.join(' OR '):q;const same=String(myA[i])===String(ptA[i]);
-    return'<div class="aitem"><div class="aq">'+ql.slice(0,60)+(ql.length>60?'…':'')+'</div><div class="achips"><span class="achip '+(same?'m':'d')+'">'+(entry.myName||S.name||'You')+': '+String(myA[i]||'—').slice(0,30)+'</span><span class="achip p">'+(entry.ptName||S.partnerName||'Partner')+': '+String(ptA[i]!==undefined?ptA[i]:'—').slice(0,30)+'</span></div></div>';
+    return'<div class="aitem"><div class="aq">'+ql.slice(0,60)+'</div><div class="achips"><span class="achip '+(same?'m':'d')+'">'+(entry.myName||S.name||'You')+': '+String(myA[i]||'—').slice(0,30)+'</span><span class="achip p">'+(entry.ptName||S.partnerName||'Partner')+': '+String(ptA[i]!==undefined?ptA[i]:'—').slice(0,30)+'</span></div></div>';
   }).join('');
   document.getElementById('pbody').innerHTML='<div class="finwrap"><span class="finem">'+(pct>=80?'💞':pct>=50?'💛':'💙')+'</span><div class="finpct">'+pct+'% match!</div><p class="finsub">'+matched+' of '+myA.length+' answers aligned</p><div class="acard"><div class="albl">All answers</div>'+items+'</div><button class="btn btn-r" onclick="exitPlay()">← Back</button></div>';
 }
+function exitPlay(){document.getElementById('sp').classList.remove('active');document.getElementById('sa').classList.add('active');showTab('home');renderAll()}
 
 // ── DISCUSS TAB ──
 function renderDiscuss(){
@@ -912,7 +849,7 @@ function renderDiscuss(){
         <span style="font-size:1.25rem">${r.emoji}</span><span style="flex:1;font-size:.88rem;font-weight:600">${r.name}</span>
         <span style="font-family:var(--fm);font-size:.65rem;text-transform:uppercase;color:var(--muted)">${m.length} msg</span>
       </div>
-      <div class="msgs" style="display:flex;flex-direction:column;gap:.35rem">${m.length?m.map(mg=>`<div class="bub ${mg.isMe?'me':'pt'}" style="font-size:.72rem"><span style="opacity:.6">${mg.isMe?'You':mg.senderName||'Partner'}:</span> ${mg.text}</div>`).join(''):'<div class="emsg" style="font-size:.72rem">No messages yet</div>'}</div>
+      <div class="msgs" style="display:flex;flex-direction:column;gap:.35rem">${m.length?m.map(mg=>`<div class="bub ${mg.isMe?'me':'pt'}" style="font-size:.72rem">${mg.text}</div>`).join(''):'<div class="emsg" style="font-size:.72rem">No messages yet</div>'}</div>
       <div class="crow2" style="margin-top:.5rem">
         <input class="cinput" id="dc${r.id}" placeholder="Add a comment..." style="font-size:.75rem" onkeydown="if(event.key==='Enter')sendDC(${r.id})">
         <button class="csend" style="width:1.85rem;height:1.85rem;font-size:.8rem" onclick="sendDC(${r.id})">➤</button>
@@ -953,9 +890,23 @@ function editName(){const n=prompt('Your name:',S.name||'');if(n?.trim()){S.name
 function editStatus(){const s=prompt('What\'s your vibe right now?',S.status||'');if(s!==null){S.status=s.trim().slice(0,80);save();fbUpdate('users/'+S.pairCode,{status:S.status});renderProfile()}}
 function editDate(){const cur=S.daysStart?new Date(S.daysStart).toISOString().slice(0,10):'';const v=prompt('When did your love story start? (YYYY-MM-DD)',cur);if(!v)return;const t=Date.parse(v);if(!isNaN(t)){S.daysStart=t;save();renderAll()}}
 function installW(){alert('📱 Add to home screen:\n• iPhone: Share → "Add to Home Screen"\n• Android: Menu → "Add to Home Screen"')}
-function resetAll(){if(confirm('Sign out and reset all data?')){fbUpdate('users/'+S.pairCode,{online:false});if(window.AUTH)window.AUTH.signOut().catch(()=>{});localStorage.removeItem(KEY);location.reload()}}
+function resetAll(){if(confirm('Sign out and reset all data?')){fbUpdate('users/'+S.pairCode,{online:false});localStorage.removeItem(KEY);location.reload()}}
 
 // ── BOOT ──
+runWhenFbReady(()=>{
+  window.AUTH.onAuthStateChanged(user=>{
+    if(user){
+      if(!S.name&&user.displayName)S.name=user.displayName;
+      if(!S.avatar&&user.photoURL)S.avatar=user.photoURL;
+      if(!S.authed){S.authed=true;if(!S.daysStart)S.daysStart=Date.now();save();}
+      if(!document.getElementById('sa').classList.contains('active')){
+        document.getElementById('sw').classList.remove('active');
+        document.getElementById('sa').classList.add('active');
+        msgs=S.messages||{};fbSetup();renderAll();
+      }
+    }
+  });
+});
 if(S.authed){
   document.getElementById('sw').classList.remove('active');
   document.getElementById('sa').classList.add('active');
