@@ -7,9 +7,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getDatabase, ref, set, get, update, onValue, onChildAdded, push, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
+  import { getDatabase, ref, set, get, update, onValue, onChildAdded, push, onDisconnect } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDM2jU6NsjL2UMTSmrBv93S13Sc62eDCAU",
@@ -24,10 +23,8 @@
 
   const app = initializeApp(firebaseConfig);
   const database = getDatabase(app);
-  const auth = getAuth(app);
-  const googleProvider = new GoogleAuthProvider();
 
-  // Expose Firebase helpers to window
+  // Expose Firebase helpers to window so the main script can use them
   window.FB = {
     ref: (path) => ref(database, path),
     set: (r, v) => set(r, v),
@@ -40,18 +37,9 @@
     off: (r) => { try { r.off && r.off() } catch(e){} }
   };
 
-  // Expose auth functions
-  window.AUTH = {
-    signUp: (email, pass) => createUserWithEmailAndPassword(auth, email, pass),
-    signIn: (email, pass) => signInWithEmailAndPassword(auth, email, pass),
-    google: () => signInWithPopup(auth, googleProvider),
-    signOut: () => signOut(auth),
-    updateProfile: (user, data) => updateProfile(user, data),
-    onAuthStateChanged: (cb) => onAuthStateChanged(auth, cb)
-  };
-
   window.fbReady = true;
-  console.log("✅ Firebase v10 ready");
+  console.log("✅ Firebase module ready");
+  // Fire any queued setup
   if(window._fbQueue) window._fbQueue.forEach(fn => fn());
 </script>
 
@@ -456,7 +444,13 @@ function fbSetup(){
     const disc = FB.onDisconnect(r);
     disc.update({online:false,ts:Date.now()});
     myRef = r;
-    if(S.paired&&S.pairedCode) fbListenPartner(S.pairedCode);
+    if(S.paired&&S.pairedCode){
+      FB.get(FB.ref('users/'+S.pairedCode)).then(snap=>{
+        const d=snap.val();
+        if(d){S.partnerName=d.name||S.partnerName;S.partnerAvatar=d.avatar||S.partnerAvatar;save();updateTopbar();renderHero();}
+      }).catch(()=>{});
+      fbListenPartner(S.pairedCode);
+    }
   });
 }
 function fbUpdate(path,data){
@@ -481,25 +475,31 @@ function fbListenPartner(code){
     });
   });
 }
-function fbSendChat(qid,text,from){
+function fbSendChat(qid,text){
   if(!S.paired||!S.pairedCode)return;
   runWhenFbReady(()=>{
     const room=[S.pairCode,S.pairedCode].sort().join('_');
-    FB.push(FB.ref('chats/'+room+'/'+qid),{from,text,time:Date.now()});
+    FB.push(FB.ref('chats/'+room+'/'+qid),{senderId:S.pairCode,senderName:S.name||'You',text,time:Date.now()});
   });
 }
+const _chatListened={};
 function fbListenChat(qid){
   if(!S.paired||!S.pairedCode)return;
+  if(_chatListened[qid])return;
+  _chatListened[qid]=true;
   runWhenFbReady(()=>{
     const room=[S.pairCode,S.pairedCode].sort().join('_');
+    const seenKeys=new Set();
     FB.onChildAdded(FB.ref('chats/'+room+'/'+qid), snap=>{
+      if(seenKeys.has(snap.key))return;
+      seenKeys.add(snap.key);
       const m=snap.val();
+      m.isMe=(m.senderId===S.pairCode);
       if(!msgs[qid])msgs[qid]=[];
-      const dup=msgs[qid].some(x=>x.time===m.time&&x.text===m.text);
-      if(!dup){msgs[qid].push(m);S.messages=msgs;save();renderDiscuss();
-        const el=document.getElementById('fmsgs');
-        if(el){el.innerHTML=msgs[qid].map(mg=>`<div class="bub ${mg.from==='me'?'me':'pt'}">${mg.text}</div>`).join('');el.scrollTop=el.scrollHeight;}
-      }
+      msgs[qid].push(m);S.messages=msgs;save();
+      renderDiscuss();
+      const el=document.getElementById('fmsgs');
+      if(el){el.innerHTML=msgs[qid].map(mg=>`<div class="bub ${mg.isMe?'me':'pt'}" style="margin-bottom:.3rem"><span style="font-size:.65rem;opacity:.6">${mg.isMe?'You':mg.senderName||'Partner'}</span><br>${mg.text}</div>`).join('');el.scrollTop=el.scrollHeight;}
     });
   });
 }
@@ -534,6 +534,386 @@ const QUIZZES=[
   {id:31,topic:'money',name:'Money Habits',fmt:'likely',emoji:'💸',qs:['…be the one who checks the bank account regularly?','…make an impulse purchase without telling the other?','…remember to pay a bill on time?','…negotiate a better deal or price on a purchase?','…be more stressed about money?','…suggest saving for something specific vs. spending now?','…be more generous with money toward others?']},
   {id:33,topic:'money',name:'Spending vs. Saving',fmt:'tot',emoji:'💳',qs:[['Spend on experiences (travel, concerts)','Invest in things that last (property, savings)'],['Buy quality once','Buy cheap and replace'],['Live for today financially','Sacrifice now for a comfortable future'],['Luxury holiday once a year','Multiple budget trips'],['Rent in a great location','Buy somewhere less ideal'],['Save an emergency fund first','Invest in growth']]},
   {id:35,topic:'money',name:'Money & Childhood',fmt:'deep',emoji:'🧸',qs:['How did money feel growing up — scarce, abundant, or never discussed?','What money habits from your childhood do you still carry today?','Did your parents fight about money? How did that shape your relationship with it?','What is the first memory you have of money?','Do you feel your childhood made you more of a spender or a saver?','Has your financial situation ever caused you shame or pride?']},
-  {id:41,topic:'know',name:'Childhood & Origins',fmt:'deep',emoji:'🧸',qs:['What is one memory from your childhood that shaped who you are in relationships?','Who was your biggest role model growing up and what did they teach you about love?','... (31 Ko restants)
-message.txt
-81 Ko
+  {id:41,topic:'know',name:'Childhood & Origins',fmt:'deep',emoji:'🧸',qs:['What is one memory from your childhood that shaped who you are in relationships?','Who was your biggest role model growing up and what did they teach you about love?','Was there a moment in your childhood where you felt truly seen and understood?','What was your biggest dream as a kid — and what happened to it?','How was affection expressed in your family growing up?','What did your family of origin teach you about love?']},
+  {id:42,topic:'know',name:'Personality & Quirks',fmt:'tot',emoji:'🧩',qs:[['Introvert','Extrovert — how do you truly recharge?'],['Planner','Spontaneous — how do you approach life?'],['Head (logic)','Heart (emotion) — how do you make decisions?'],['Morning person','Night person'],['Talker when stressed','Someone who goes quiet'],['Risk-taker','Safety-first'],['Optimist','Realist']]},
+  {id:45,topic:'know',name:'Hidden Depths',fmt:'nhie',emoji:'🔍',qs:['…told my partner something about my past that I\'d never shared with anyone before.','…pretended to like something my partner loves just to connect with them.','…surprised myself by doing something I never thought I was capable of.','…kept a secret about myself that I\'m still not ready to share.','…felt my partner saw a side of me that even I hadn\'t noticed.','…changed a deeply held belief because of something my partner said or showed me.']},
+  {id:50,topic:'know',name:'The Small Things',fmt:'likely',emoji:'🔎',qs:['…remember the exact outfit the other wore on their first date?','…know the other\'s coffee or tea order by heart?','…notice when the other has had a bad day before they say a word?','…remember a small detail the other mentioned months ago?','…laugh first in a funny situation?','…get emotionally invested in a TV show character?','…be the first to break into a song during a car ride?']},
+  {id:51,topic:'travel',name:'Travel Styles',fmt:'tot',emoji:'🧳',qs:[['Plan every detail in advance','Book a flight and figure it out'],['Luxury hotel','Authentic local guesthouse'],['Beach destination','Cultural city'],['One long trip per year','Several short weekend breaks'],['Known tourist spots','Off-the-beaten-path hidden gems'],['Road trip','Fly and explore'],['Travel light (carry-on only)','Pack everything just in case']]},
+  {id:52,topic:'travel',name:'Travel Habits',fmt:'likely',emoji:'✈️',qs:['…overpack and then complain about carrying it?','…get to the airport dangerously late?','…get into an argument about directions?','…be doing all the research and planning before the trip?','…be hungry and grumpy in transit?','…talk to strangers and make new friends on a trip?','…take the most photos?','…want to see "one more thing" when everyone else is exhausted?']},
+  {id:61,topic:'family',name:'Children & Parenting',fmt:'discuss',emoji:'👶',qs:['Do you both want children? How many? When?','How do you align on parenting styles — strict vs. permissive?','How would you handle a difference in opinion on a major parenting decision?','What values do you most want to pass on to your children?','How would you handle a child who is very different from either of you?','What does co-parenting responsibility look like to you?']},
+  {id:66,topic:'family',name:'Parenting Styles',fmt:'tot',emoji:'🍼',qs:[['Strict structure and rules','Relaxed and child-led parenting'],['Religious upbringing','Secular with open conversation about beliefs'],['Private school','Public school'],['Stay-at-home parent','Both parents working'],['Helicopter parenting','Free-range parenting'],['Pocket money with responsibility','Provide everything freely']]},
+  {id:71,topic:'hobbies',name:'Shared Hobbies',fmt:'discuss',emoji:'🎯',qs:['Is there a hobby you\'ve always wanted to try with your partner but never have?','Do you have enough shared activities that you genuinely both enjoy?','Is there a hobby of your partner\'s you\'ve tried to love but just can\'t?','How do you balance time for individual hobbies vs. couple hobbies?','Could you see yourselves starting a creative project or business together?','Is there a hobby from your past you\'ve abandoned that you\'d like to revisit?']},
+  {id:77,topic:'hobbies',name:'Entertainment & Pop Culture',fmt:'likely',emoji:'🎬',qs:['…binge an entire TV series in one weekend?','…start a new show without waiting for the other?','…cry during a movie or series?','…know all the lyrics to a guilty pleasure song?','…spend hours on YouTube or social media falling into a rabbit hole?','…be more into video games?','…have a running list of recommended films and shows to watch?']},
+  {id:81,topic:'lifestyle',name:'Daily Routines',fmt:'tot',emoji:'☀️',qs:[['Morning workout','Evening workout'],['Slow morning with coffee','Jump straight into work'],['Cook a fresh meal every night','Meal prep for the week'],['Wind down with a show','Read before sleeping'],['Phone-free mornings','Scroll immediately on waking'],['Early to bed, early to rise','Night owl and slow morning']]},
+  {id:84,topic:'lifestyle',name:'City vs. Nature',fmt:'wyr',emoji:'🌿',qs:[['live in the heart of a vibrant city','in a quiet house surrounded by nature'],['have a small minimalist apartment','a large house with more maintenance'],['live abroad in a foreign country for a year','stay rooted in your home city'],['own a home','always rent and have flexibility'],['live somewhere warm year-round','have all four distinct seasons'],['have no car and walk everywhere','live somewhere that requires driving']]},
+  {id:91,topic:'food',name:'Food Personalities',fmt:'likely',emoji:'🍽️',qs:['…finish the other\'s plate without asking?','…suggest dessert every time?','…be the one who researches restaurants before a trip?','…try the most unusual dish on the menu?','…complain about a bad meal?','…be the better cook?','…snack the most at home?','…order delivery instead of cooking when tired?']},
+  {id:93,topic:'food',name:'Flavor Profiles',fmt:'tot',emoji:'🌶️',qs:[['Spicy 🌶️','Mild and comforting'],['Sweet 🍰','Savory 🧀'],['Home cooking','Restaurant dining'],['Fast food guilty pleasure','Always eating clean'],['Fine dining','Street food'],['Breakfast as the best meal','Dinner is the main event']]},
+  {id:97,topic:'food',name:'Food Philosophy',fmt:'agree',emoji:'🍴',qs:['Cooking for your partner is one of the most intimate and loving acts.','Couples who eat together regularly have stronger relationships.','Sharing food from the same plate is a sign of real intimacy and comfort.','Everyone should know how to cook at least a few meals well.','Food allergies and dietary restrictions should be fully respected by a partner.','Where you take someone for a first meal says a lot about who you are.']},
+];
+
+// ── STATE ──
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||def()}catch{return def()}}
+function def(){return{authed:false,name:'',avatar:'',status:'',partnerName:'',partnerAvatar:'',partnerOnline:false,pairCode:gc(),paired:false,pairedCode:'',daysStart:null,streak:0,matchScore:null,completed:[],quizHistory:[],messages:{}}}
+function save(){localStorage.setItem(KEY,JSON.stringify(S))}
+function gc(){return Math.random().toString(36).slice(2,8).toUpperCase()}
+
+// ── MODALS ──
+let sapAv='';
+function openM(id,type){
+  document.getElementById(id).classList.add('open');
+  if(id==='am')renderAuth(type||'signup');
+  if(id==='pm'){document.getElementById('mycode').textContent=S.pairCode;document.getElementById('pstat').textContent='';document.getElementById('codeinp').value=''}
+}
+function closeM(id){document.getElementById(id).classList.remove('open')}
+function closeOut(e,id){if(e.target.id===id)closeM(id)}
+
+function renderAuth(t){
+  const c=document.getElementById('ac');
+  if(t==='signup'){
+    c.innerHTML=`<div class="handle"></div><h2 class="mtitle">Create your account 💕</h2>
+    <div class="av-up"><div class="av-circ" onclick="document.getElementById('sav').click()" id="savc"><span style="font-size:2rem">🧑</span><div class="cam-b">📷</div><input type="file" id="sav" accept="image/*" onchange="prevSAv(event)"></div><span style="font-family:var(--fm);font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;color:oklch(0.6 0.04 320)">Tap to add a photo</span></div>
+    <div class="field"><label>Your name</label><input id="sname" placeholder="e.g. Alex" autocomplete="name"></div>
+    <div class="field"><label>Email</label><input type="email" id="semail" placeholder="you@example.com"></div>
+    <div class="field"><label>Password</label><input type="password" id="spw" placeholder="••••••••"></div>
+    <button class="btn btn-r" onclick="doSignup()" style="margin-top:.5rem">Create account ✨</button>
+    <button class="btn btn-c" onclick="doGoogle()" style="margin-top:.5rem">🔍 Continue with Google</button>
+    <button class="btn-g" onclick="renderAuth('login')" style="display:block;text-align:center;margin-top:.75rem;width:100%">Already have an account? Sign in</button>`;
+  } else {
+    c.innerHTML=`<div class="handle"></div><h2 class="mtitle">Welcome back 💕</h2>
+    <div class="field"><label>Email</label><input type="email" placeholder="you@example.com"></div>
+    <div class="field"><label>Password</label><input type="password" placeholder="••••••••"></div>
+    <button class="btn btn-r" onclick="doLogin()" style="margin-top:.5rem">Sign in ✨</button>
+    <button class="btn btn-c" onclick="doGoogle()" style="margin-top:.5rem">🔍 Continue with Google</button>
+    <button class="btn-g" onclick="renderAuth('signup')" style="display:block;text-align:center;margin-top:.75rem;width:100%">Don't have an account? Sign up</button>`;
+  }
+}
+function prevSAv(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{sapAv=ev.target.result;const c=document.getElementById('savc');c.innerHTML=`<img src="${ev.target.result}"><div class="cam-b">📷</div><input type="file" id="sav" accept="image/*" onchange="prevSAv(event)">`};r.readAsDataURL(f)}
+function doSignup(){const n=document.getElementById('sname').value.trim();if(!n){alert('Please enter your name!');return}S.name=n;S.avatar=sapAv||'';S.authed=true;if(!S.daysStart)S.daysStart=Date.now();save();closeM('am');launch()}
+function doLogin(){S.authed=true;if(!S.daysStart)S.daysStart=Date.now();save();closeM('am');launch()}
+function doGoogle(){const ns=['Alex','Sam','Jordan','Taylor','Riley','Emma','Liam'];if(!S.name)S.name=ns[Math.floor(Math.random()*ns.length)];S.authed=true;if(!S.daysStart)S.daysStart=Date.now();save();closeM('am');launch()}
+
+function launch(){
+  document.getElementById('sw').classList.remove('active');
+  document.getElementById('sa').classList.add('active');
+  msgs=S.messages||{};
+  fbSetup();
+  renderAll();
+  if(!S.paired) setTimeout(()=>openM('pm'),700);
+}
+
+// ── PAIR ──
+function connectPartner(){
+  const c=document.getElementById('codeinp').value.trim().toUpperCase();
+  const fb=document.getElementById('pstat');
+  if(c.length<4){fb.className='pstatus err';fb.textContent='❌ Enter a valid code!';return}
+  if(c===S.pairCode){fb.className='pstatus err';fb.textContent='❌ That is your own code!';return}
+  fb.className='pstatus';fb.textContent='🔄 Connecting via Firebase…';
+  runWhenFbReady(()=>{
+    FB.get(FB.ref('users/'+c)).then(snap=>{
+      const d=snap.val();
+      if(!d){fb.className='pstatus err';fb.textContent='❌ Code not found — ask your partner to open the app first!';return;}
+      S.paired=true;S.pairedCode=c;
+      S.partnerName=d.name||'Partner';
+      S.partnerAvatar=d.avatar||'';
+      save();
+      FB.update(FB.ref('users/'+S.pairCode),{paired:true,pairedWith:c,pairedName:S.partnerName});
+      FB.update(FB.ref('users/'+c),{paired:true,pairedWith:S.pairCode,pairedName:S.name});
+      fbListenPartner(c);
+      fb.className='pstatus ok';fb.textContent='💕 Paired with '+S.partnerName+'!';
+      setTimeout(()=>{closeM('pm');renderAll()},1200);
+    }).catch((err)=>{
+      console.error(err);
+      fb.className='pstatus err';fb.textContent='❌ Connection error. Try again.';
+    });
+  });
+}
+
+// ── RENDER ──
+function renderAll(){updateTopbar();renderHero();renderChips();renderQList(null);renderCats();renderDiscuss();renderProfile()}
+function updateTopbar(){
+  const av=document.getElementById('tpavc'),nm=document.getElementById('tpnm'),dot=document.getElementById('tpdot');
+  if(S.paired&&S.partnerName){nm.textContent=S.partnerName;dot.style.display='inline-block';av.innerHTML=S.partnerAvatar?`<img src="${S.partnerAvatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:S.partnerName[0]}
+  else{nm.textContent='Pair up';dot.style.display='none';av.innerHTML='?'}
+}
+function renderHero(){
+  const days=S.daysStart?Math.floor((Date.now()-S.daysStart)/864e5):0;
+  document.getElementById('hdays').textContent=days;
+  document.getElementById('hdlbl').textContent=S.daysStart?'days together':'tap to set anniversary';
+  document.getElementById('hstr').textContent=S.streak||0;
+  const mw=document.getElementById('hmwrap');
+  if(S.matchScore!=null){mw.style.display='inline';document.getElementById('hm').textContent=S.matchScore}else mw.style.display='none';
+  const me=document.getElementById('hmec');
+  me.innerHTML=S.avatar?`<img src="${S.avatar}" style="width:84px;height:84px;object-fit:cover;border-radius:50%">`:S.name?S.name[0].toUpperCase():'🧑';
+  document.getElementById('hmen').textContent=S.name||'You';
+  const pt=document.getElementById('hptc');
+  pt.innerHTML=(S.paired&&S.partnerAvatar)?`<img src="${S.partnerAvatar}" style="width:84px;height:84px;object-fit:cover;border-radius:50%">`:S.paired?(S.partnerName?S.partnerName[0]:'🧑'):'🧑';
+  document.getElementById('hptn').textContent=S.paired?(S.partnerName||'Partner'):'Pair up';
+}
+let activeTopic=null;
+function renderChips(){
+  document.getElementById('tchips').innerHTML=`<button class="chip on" onclick="filterT(null,this)">✨ All</button>`+TOPICS.map(t=>`<button class="chip" onclick="filterT('${t.id}',this)">${t.label}</button>`).join('');
+}
+function filterT(tid,el){document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));el.classList.add('on');activeTopic=tid;renderQList(tid);document.getElementById('qlt').textContent=tid?(TOPICS.find(t=>t.id===tid)?.label||'Quizzes'):'All quizzes'}
+function shuffleQ(){const el=document.getElementById('qlist');const cs=[...el.children];for(let i=cs.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));el.appendChild(cs[j])}}
+function avHTML(src,name,size=100){return src?`<img src="${src}" style="width:${size}%;height:${size}%;object-fit:cover;border-radius:50%">`:name?name[0]:'🧑'}
+function renderQList(tid){
+  const list=tid?QUIZZES.filter(q=>q.topic===tid):QUIZZES;
+  document.getElementById('qlist').innerHTML=list.map(q=>{
+    const f=FMT[q.fmt];const done=S.completed.includes(q.id);const g=TGRAD[q.topic]||'rose';
+    return`<div class="qcard grad-${g}" onclick="startQ(${q.id})">
+      <div class="cyber"></div><div class="qblob"></div>
+      <div class="qem">${q.emoji}</div>
+      <div class="qi"><div class="qn">${q.name}</div>
+        <div class="qm"><span class="ftag">${f.i} ${f.l}</span><span style="font-family:var(--fm)">${q.qs.length}Q</span></div>
+      </div>
+      <div class="qr">
+        <div class="avst"><div class="avx">${avHTML(S.avatar,S.name)}</div><div class="avx">${avHTML(S.partnerAvatar,S.partnerName)}</div></div>
+        ${done?'<span class="dtag">✓ Done</span>':'<span class="ntag">New</span>'}
+      </div>
+    </div>`;
+  }).join('');
+}
+function renderCats(){
+  document.getElementById('catscroll').innerHTML=TOPICS.map(t=>`<div class="qcard grad-${t.color}" style="flex-shrink:0;width:7rem;height:8rem;flex-direction:column;align-items:center;justify-content:space-between;padding:.75rem" onclick="filterT('${t.id}',document.querySelector('.chip'))">
+    <div class="cyber"></div><span style="font-size:2rem;position:relative">${t.label.split(' ')[0]}</span>
+    <span style="font-size:.72rem;font-weight:600;position:relative;text-align:center;line-height:1.2">${t.label.replace(/^[^\s]+\s/,'')}</span>
+  </div>`).join('');
+}
+function showTab(t){
+  document.getElementById('sp').classList.remove('active');document.getElementById('sa').classList.add('active');
+  ['home','activities','discuss','profile'].forEach(x=>{document.getElementById('tab-'+x).style.display=x===t?'block':'none';document.getElementById('n-'+x).classList.toggle('active',x===t)});
+  if(t==='discuss')renderDiscuss();if(t==='profile')renderProfile();
+}
+
+function renderActivities(){
+  const h=S.quizHistory||[];
+  const el=document.getElementById('tab-activities');if(!el)return;
+  if(!h.length){el.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;gap:1rem;color:var(--muted);text-align:center;padding:2rem"><span style="font-size:3rem">📊</span><p style="font-weight:600">Complete a quiz to see your history!</p></div>';return;}
+  let html2='<div style="padding:1rem 1rem 80px"><div style="font-size:.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.75rem">Completed Quizzes</div>';
+  h.forEach((r,idx)=>{
+    const g=TGRAD[QUIZZES.find(q=>q.id===r.id)?.topic]||'rose';
+    html2+='<div class="qcard grad-'+g+'" style="margin-bottom:.75rem" onclick="openReview('+idx+')"><div class="cyber"></div><div class="qblob"></div><div class="qem">'+r.emoji+'</div><div class="qi"><div class="qn">'+r.name+'</div><div class="qm"><span class="ftag">'+new Date(r.date).toLocaleDateString()+'</span></div></div><div class="qr"><span class="dtag">'+r.pct+'% 💕</span></div></div>';
+  });
+  html2+='</div>';el.innerHTML=html2;
+}
+function openReview(idx){const entry=(S.quizHistory||[])[idx];if(entry)reviewQuiz(entry);}
+
+// ── QUIZ PLAY ──
+function startQ(id){
+  CQ=QUIZZES.find(q=>q.id===id);if(!CQ)return;
+  CQi=0;myA=[];ptA=[];CQs=CQ.qs;
+  document.getElementById('sa').classList.remove('active');document.getElementById('sp').classList.add('active');
+  document.getElementById('pttitle').textContent=CQ.emoji+' '+CQ.name;
+  fbListenChat(CQ.id);renderQ();
+}
+function renderQ(){
+  const q=CQs[CQi],total=CQs.length,fmt=CQ.fmt;
+  document.getElementById('pfill').style.width=Math.round((CQi/total)*100)+'%';
+  document.getElementById('pctxt').textContent=(CQi+1)+'/'+total;
+  const body=document.getElementById('pbody');
+  let h=`<div class="qa"><div class="qlbl">Question ${CQi+1} of ${total}</div>`;
+  if(fmt==='likely'){
+    h+=`<div class="qprompt">Who is more likely to…<br><em>${q}</em></div>
+    <div class="lrow">
+      <button class="lbtn" onclick="pickA(S.name||'Me',this)"><div class="lav">${avHTML(S.avatar,S.name)}</div><span style="font-size:.85rem;font-weight:600;color:var(--fg)">${S.name||'Me'}</span></button>
+      <button class="lbtn" onclick="pickA(S.partnerName||'Partner',this)"><div class="lav" style="background:var(--grad-cyan)">${avHTML(S.partnerAvatar,S.partnerName)}</div><span style="font-size:.85rem;font-weight:600;color:var(--fg)">${S.partnerName||'Partner'}</span></button>
+    </div>`;
+  } else if(fmt==='tot'){
+    h+=`<div class="qprompt">⚡ This or That?</div><div class="trow">
+      <button class="tbtn" data-v="${q[0]}" onclick="pickA(this.dataset.v,this)">${q[0]}</button><span class="tvor">OR</span>
+      <button class="tbtn" data-v="${q[1]}" onclick="pickA(this.dataset.v,this)">${q[1]}</button></div>`;
+  } else if(fmt==='wyr'){
+    h+=`<div class="qprompt">💭 Would you rather…</div><div class="wlist">
+      <button class="wbtn" data-v="${q[0]}" onclick="pickA(this.dataset.v,this)">👈 ${q[0]}</button>
+      <button class="wbtn" data-v="${q[1]}" onclick="pickA(this.dataset.v,this)">👉 ${q[1]}</button></div>`;
+  } else if(fmt==='agree'){
+    h+=`<div class="qprompt">${q}</div><div class="agrid">
+      <button class="abtn" onclick="pickA('Strongly Agree',this)">Strongly Agree</button>
+      <button class="abtn" onclick="pickA('Agree',this)">Agree</button>
+      <button class="abtn" onclick="pickA('Disagree',this)">Disagree</button>
+      <button class="abtn" onclick="pickA('Strongly Disagree',this)">Strongly Disagree</button></div>`;
+  } else if(fmt==='nhie'){
+    h+=`<div class="qprompt">🙈 Never have I ever…<br><em>${q}</em></div><div class="nrow">
+      <button class="nbtn nhave" onclick="pickA('I HAVE',this)">✋ I Have</button>
+      <button class="nbtn nnever" onclick="pickA('NEVER',this)">🙈 Never</button></div>`;
+  } else {
+    if(fmt==='photo')h+=`<div class="photocard"><div style="font-size:2rem;margin-bottom:.5rem">📸</div><p style="font-size:.9rem;font-style:italic;color:rgba(255,255,255,.9)">${q}</p><p style="font-size:.75rem;color:rgba(255,255,255,.7);margin-top:.5rem">Grab your phone, find a photo, and show each other!</p></div>`;
+    else h+=`<div class="qprompt">${fmt==='deep'?'💡':'🗣️'} ${q}</div>`;
+    h+=`<div class="ocard"><div class="olbl">Your answer (take 2–3 mins each):</div><textarea id="oans" placeholder="${fmt==='photo'?'Describe your photo...':'Share your thoughts openly...'}"></textarea></div>
+    <button class="btn btn-r" onclick="pickOpen()">Share & Continue →</button>`;
+  }
+  h+=`<div id="rarea"></div></div>`;
+  body.innerHTML=h;body.scrollTo(0,0);
+}
+function pickA(val,btn){
+  btn.closest('.qa')?.querySelectorAll('.lbtn,.tbtn,.wbtn,.abtn,.nbtn').forEach(b=>b.disabled=true);
+  btn.classList.add('sel');
+  myA[CQi]=val;
+  if(S.paired&&S.pairedCode){
+    runWhenFbReady(()=>{ FB.update(FB.ref('quizAnswers/'+S.pairCode+'/'+CQ.id),{[CQi]:val,updatedAt:Date.now()}); });
+  }
+  fetchPartnerAnswer(CQi,(ptVal)=>{
+    ptA[CQi]=ptVal;showReveal(val,ptVal);setTimeout(()=>nextQ(),2200);
+  });
+}
+function pickOpen(){
+  const t=(document.getElementById('oans')?.value||'').trim();myA.push(t||'(shared)');
+  const rps=['Interesting perspective! 😊','I feel similarly...','That\'s so you 😊','Love that you shared that ❤️'];
+  ptA.push(rps[Math.floor(Math.random()*rps.length)]);setTimeout(()=>nextQ(),300);
+}
+function genPt(){
+  const q=CQs[CQi],fmt=CQ.fmt;
+  if(fmt==='likely')return Math.random()>.5?'ME':'PARTNER';
+  if(fmt==='tot'||fmt==='wyr')return Array.isArray(q)?q[Math.floor(Math.random()*2)]:'';
+  if(fmt==='agree'){const o=['Strongly Agree','Agree','Disagree','Strongly Disagree'];return o[Math.floor(Math.random()*4)]}
+  if(fmt==='nhie')return Math.random()>.5?'I HAVE':'NEVER';
+  return '';
+}
+function showReveal(my,pt){
+  const match=my===pt;
+  document.getElementById('rarea').innerHTML=`<div class="revcard">
+    <div class="revlbl">Answers revealed</div>
+    <div class="revrow"><div class="revav">${avHTML(S.avatar,S.name)}</div><div class="rans"><strong>${S.name||'You'}:</strong> ${my}</div></div>
+    <div class="revrow"><div class="revav" style="background:var(--grad-cyan)">${avHTML(S.partnerAvatar,S.partnerName)}</div><div class="rans"><strong>${S.partnerName||'Partner'}:</strong> ${pt}</div></div>
+    ${match?'<div class="mpill">✓ You matched! 💕</div>':''}
+  </div>`;
+}
+function nextQ(){CQi++;if(CQi>=CQs.length)finishQ();else renderQ()}
+function finishQ(){
+  const matched=myA.filter((a,i)=>a===ptA[i]).length,pct=Math.round((matched/myA.length)*100);
+  if(!S.completed.includes(CQ.id))S.completed.push(CQ.id);
+  S.streak=(S.streak||0)+1;S.matchScore=pct;
+  const entry={id:CQ.id,name:CQ.name,emoji:CQ.emoji,fmt:CQ.fmt,date:Date.now(),matched,total:myA.length,pct,myA:[...myA],ptA:[...ptA],qs:[...CQs],myName:S.name||'You',ptName:S.partnerName||'Partner'};
+  S.quizHistory=[entry,...(S.quizHistory||[])].slice(0,50);
+  if(!msgs[CQ.id])msgs[CQ.id]=[];S.messages=msgs;save();
+  document.getElementById('pfill').style.width='100%';
+  const items=CQs.map((q,i)=>{const ql=Array.isArray(q)?q.join(' OR '):q;const same=myA[i]===ptA[i];
+    return`<div class="aitem"><div class="aq">${ql.length>60?ql.slice(0,60)+'…':ql}</div>
+    <div class="achips"><span class="achip ${same?'m':'d'}">${S.name||'You'}: ${(myA[i]||'').slice(0,30)}</span>
+    <span class="achip p">${S.partnerName||'Partner'}: ${(ptA[i]||'').slice(0,30)}</span></div></div>`;
+  }).join('');
+  document.getElementById('pbody').innerHTML=`<div class="finwrap">
+    <span class="finem">${pct>=80?'💞':pct>=50?'💛':'💙'}</span>
+    <div class="finpct">${pct}% match!</div>
+    <p class="finsub">${matched} of ${myA.length} answers aligned${pct>=80?' — in sync! 🎉':pct>=50?' — great connection!':', beautifully different!'}</p>
+    <div class="acard"><div class="albl">All answers</div>${items}</div>
+    <div class="dcard"><div class="dtitle">💬 Discuss this quiz</div>
+      <div class="msgs" id="fmsgs" style="display:flex;flex-direction:column;gap:.4rem"></div>
+      <div class="crow2"><input class="cinput" id="finp" placeholder="Share your thoughts..." onkeydown="if(event.key==='Enter')sendFin()">
+      <button class="csend" onclick="sendFin()">➤</button></div>
+    </div>
+    <button class="btn btn-r" onclick="exitPlay()">Back to quizzes 💕</button>
+  </div>`;
+  renderFMsgs();
+}
+function renderFMsgs(){
+  const el=document.getElementById('fmsgs');if(!el)return;
+  const m=(msgs||{})[CQ?.id]||[];
+  el.innerHTML=m.length?m.map(mg=>`<div class="bub ${mg.isMe?'me':'pt'}">${mg.text}</div>`).join(''):'<div class="emsg">Start the conversation! 💬</div>';
+  el.scrollTop=el.scrollHeight;
+}
+function sendFin(){
+  const inp=document.getElementById('finp');if(!inp)return;const t=inp.value.trim();if(!t)return;
+  const qid=CQ?.id;if(!qid)return;
+  inp.value='';
+  fbSendChat(qid,t);
+  if(!S.paired){
+    if(!msgs[qid])msgs[qid]=[];
+    msgs[qid].push({isMe:true,senderName:S.name||'You',text:t,time:Date.now()});
+    S.messages=msgs;save();renderFMsgs();
+    setTimeout(()=>{const rps=["So true!","I see your point","That surprised me!","Let's talk more","Haha I love you!"];msgs[qid].push({isMe:false,senderName:S.partnerName||'Partner',text:rps[Math.floor(Math.random()*rps.length)],time:Date.now()});S.messages=msgs;save();renderFMsgs()},1500);
+  }
+}
+function reviewQuiz(entry){
+  CQ=QUIZZES.find(q=>q.id===entry.id);if(!CQ)return;
+  CQs=entry.qs;myA=entry.myA;ptA=entry.ptA;
+  const pct=entry.pct,matched=entry.matched;
+  document.getElementById('sa').classList.remove('active');document.getElementById('sp').classList.add('active');
+  document.getElementById('pttitle').textContent=CQ.emoji+' '+CQ.name+' — Results';
+  document.getElementById('pfill').style.width='100%';
+  const items=CQs.map((q,i)=>{const ql=Array.isArray(q)?q.join(' OR '):q;const same=String(myA[i])===String(ptA[i]);
+    return'<div class="aitem"><div class="aq">'+ql.slice(0,60)+'</div><div class="achips"><span class="achip '+(same?'m':'d')+'">'+(entry.myName||S.name||'You')+': '+String(myA[i]||'—').slice(0,30)+'</span><span class="achip p">'+(entry.ptName||S.partnerName||'Partner')+': '+String(ptA[i]!==undefined?ptA[i]:'—').slice(0,30)+'</span></div></div>';
+  }).join('');
+  document.getElementById('pbody').innerHTML='<div class="finwrap"><span class="finem">'+(pct>=80?'💞':pct>=50?'💛':'💙')+'</span><div class="finpct">'+pct+'% match!</div><p class="finsub">'+matched+' of '+myA.length+' answers aligned</p><div class="acard"><div class="albl">All answers</div>'+items+'</div><button class="btn btn-r" onclick="exitPlay()">← Back</button></div>';
+}
+function exitPlay(){document.getElementById('sp').classList.remove('active');document.getElementById('sa').classList.add('active');showTab('home');renderAll()}
+
+// ── DISCUSS TAB ──
+function renderDiscuss(){
+  const h=S.quizHistory||[];
+  document.getElementById('dempty').style.display=h.length?'none':'flex';
+  document.getElementById('dlist').innerHTML=h.map(r=>{
+    const m=(msgs||{})[r.id]||[];
+    return`<div class="dqc">
+      <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem">
+        <span style="font-size:1.25rem">${r.emoji}</span><span style="flex:1;font-size:.88rem;font-weight:600">${r.name}</span>
+        <span style="font-family:var(--fm);font-size:.65rem;text-transform:uppercase;color:var(--muted)">${m.length} msg</span>
+      </div>
+      <div class="msgs" style="display:flex;flex-direction:column;gap:.35rem">${m.length?m.map(mg=>`<div class="bub ${mg.isMe?'me':'pt'}" style="font-size:.72rem">${mg.text}</div>`).join(''):'<div class="emsg" style="font-size:.72rem">No messages yet</div>'}</div>
+      <div class="crow2" style="margin-top:.5rem">
+        <input class="cinput" id="dc${r.id}" placeholder="Add a comment..." style="font-size:.75rem" onkeydown="if(event.key==='Enter')sendDC(${r.id})">
+        <button class="csend" style="width:1.85rem;height:1.85rem;font-size:.8rem" onclick="sendDC(${r.id})">➤</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function sendDC(qid){
+  const inp=document.getElementById('dc'+qid);if(!inp)return;const t=inp.value.trim();if(!t)return;
+  inp.value='';
+  fbSendChat(qid,t);
+  if(!S.paired){
+    if(!msgs[qid])msgs[qid]=[];
+    msgs[qid].push({isMe:true,senderName:S.name||'You',text:t,time:Date.now()});
+    S.messages=msgs;save();
+    setTimeout(()=>{const rps=["So true!","That's fair!","I love you","Agree!","Interesting..."];msgs[qid].push({isMe:false,senderName:S.partnerName||'Partner',text:rps[Math.floor(Math.random()*rps.length)],time:Date.now()});S.messages=msgs;save();renderDiscuss()},1500);
+  }
+  renderDiscuss();
+}
+
+// ── PROFILE ──
+function renderProfile(){
+  document.getElementById('pfname').textContent=S.name||'Your name';
+  document.getElementById('pfstatus').textContent=S.status?`"${S.status}"`:'Tap to add a status...';
+  const days=S.daysStart?Math.floor((Date.now()-S.daysStart)/864e5):0;
+  document.getElementById('pfdays').textContent=days>0?`Together for ${days} days 💕`:'Set your anniversary below';
+  document.getElementById('stq').textContent=S.completed.length;
+  document.getElementById('sts').textContent=S.streak||0;
+  document.getElementById('stm').textContent=S.matchScore!=null?S.matchScore+'%':'—';
+  const av=document.getElementById('pfavc');
+  av.innerHTML=S.avatar?`<img src="${S.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:S.name?S.name[0].toUpperCase():'🧑';
+  document.getElementById('datelbl').textContent=S.daysStart?`Anniversary: ${new Date(S.daysStart).toLocaleDateString()}`:'Set anniversary date';
+  document.getElementById('pairlbl').textContent=S.paired?`Paired with ${S.partnerName}`:'Pair code';
+}
+function chAv(){document.getElementById('pffile').click()}
+function handleAv(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{S.avatar=ev.target.result;save();fbUpdate('users/'+S.pairCode,{avatar:S.avatar,name:S.name});renderAll()};r.readAsDataURL(f)}
+function editName(){const n=prompt('Your name:',S.name||'');if(n?.trim()){S.name=n.trim();save();fbUpdate('users/'+S.pairCode,{name:S.name});renderAll()}}
+function editStatus(){const s=prompt('What\'s your vibe right now?',S.status||'');if(s!==null){S.status=s.trim().slice(0,80);save();fbUpdate('users/'+S.pairCode,{status:S.status});renderProfile()}}
+function editDate(){const cur=S.daysStart?new Date(S.daysStart).toISOString().slice(0,10):'';const v=prompt('When did your love story start? (YYYY-MM-DD)',cur);if(!v)return;const t=Date.parse(v);if(!isNaN(t)){S.daysStart=t;save();renderAll()}}
+function installW(){alert('📱 Add to home screen:\n• iPhone: Share → "Add to Home Screen"\n• Android: Menu → "Add to Home Screen"')}
+function resetAll(){if(confirm('Sign out and reset all data?')){fbUpdate('users/'+S.pairCode,{online:false});localStorage.removeItem(KEY);location.reload()}}
+
+// ── BOOT ──
+runWhenFbReady(()=>{
+  window.AUTH.onAuthStateChanged(user=>{
+    if(user){
+      if(!S.name&&user.displayName)S.name=user.displayName;
+      if(!S.avatar&&user.photoURL)S.avatar=user.photoURL;
+      if(!S.authed){S.authed=true;if(!S.daysStart)S.daysStart=Date.now();save();}
+      if(!document.getElementById('sa').classList.contains('active')){
+        document.getElementById('sw').classList.remove('active');
+        document.getElementById('sa').classList.add('active');
+        msgs=S.messages||{};fbSetup();renderAll();
+      }
+    }
+  });
+});
+if(S.authed){
+  document.getElementById('sw').classList.remove('active');
+  document.getElementById('sa').classList.add('active');
+  msgs=S.messages||{};
+  fbSetup();
+  renderAll();
+}
+</script>
+</body>
+</html>
