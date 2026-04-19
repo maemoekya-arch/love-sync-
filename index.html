@@ -24,7 +24,6 @@
   const app = initializeApp(firebaseConfig);
   const database = getDatabase(app);
 
-  // Expose Firebase helpers to window so the main script can use them
   window.FB = {
     ref: (path) => ref(database, path),
     set: (r, v) => set(r, v),
@@ -34,12 +33,10 @@
     onValue: (r, cb) => onValue(r, cb),
     onChildAdded: (r, cb) => onChildAdded(r, cb),
     onDisconnect: (r) => onDisconnect(r),
-    off: (r) => { try { r.off && r.off() } catch(e){} }
   };
 
   window.fbReady = true;
   console.log("✅ Firebase module ready");
-  // Fire any queued setup
   if(window._fbQueue) window._fbQueue.forEach(fn => fn());
 </script>
 
@@ -75,7 +72,6 @@ html,body{background:var(--grad-bg);background-attachment:fixed;color:var(--fg);
 .screen{display:none;flex-direction:column;min-height:100vh}.screen.active{display:flex}
 .scroll{flex:1;overflow-y:auto;padding-bottom:80px}.scroll::-webkit-scrollbar{display:none}
 .cyber{background-image:linear-gradient(oklch(0.7 0.27 350/0.08) 1px,transparent 1px),linear-gradient(90deg,oklch(0.7 0.27 350/0.08) 1px,transparent 1px);background-size:32px 32px}
-/* TOPBAR */
 .topbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:oklch(0.13 0.02 310/0.85);backdrop-filter:blur(20px);padding:.75rem 1rem}
 .logo{font-family:var(--fd);font-size:1.25rem;font-weight:700;color:var(--rose);text-shadow:0 0 20px oklch(0.7 0.27 350/0.6);cursor:pointer}
 .logo span{color:var(--cyan);text-shadow:0 0 18px oklch(0.78 0.18 200/0.6)}
@@ -85,12 +81,10 @@ html,body{background:var(--grad-bg);background-attachment:fixed;color:var(--fg);
 .pav img{width:100%;height:100%;object-fit:cover}
 .online-dot{width:8px;height:8px;border-radius:50%;background:var(--mint);animation:blink 2s infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
-/* BNAV */
 .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;z-index:40;display:flex;border-top:1px solid oklch(0.45 0.18 350/0.3);background:oklch(0.13 0.02 310/0.85);backdrop-filter:blur(20px)}
 .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:.15rem;padding:.65rem .5rem;cursor:pointer;border:none;background:transparent;color:oklch(0.55 0.04 320);font-size:.6rem;font-weight:500;transition:all .2s;position:relative}
 .ni.active{color:var(--rose);text-shadow:0 0 12px oklch(0.7 0.27 350/0.5)}
 .ni.active::before{content:'';position:absolute;top:0;width:2.5rem;height:2px;border-radius:1px;background:var(--rose);box-shadow:var(--glow)}
-/* WELCOME */
 #sw{background:radial-gradient(ellipse at 30% 20%,oklch(0.4 0.22 340) 0%,oklch(0.13 0.02 310) 60%),radial-gradient(ellipse at 80% 80%,oklch(0.3 0.18 220) 0%,transparent 50%);align-items:center;justify-content:center;text-align:center;padding:2rem 1.5rem}
 .w-heart{font-size:4rem;animation:hpulse 1.4s ease-in-out infinite;display:block;margin-bottom:1rem}
 @keyframes hpulse{0%,100%{transform:scale(1);filter:drop-shadow(0 0 8px oklch(0.7 0.27 350/0.6))}50%{transform:scale(1.18);filter:drop-shadow(0 0 24px oklch(0.7 0.27 350/0.9))}}
@@ -102,7 +96,6 @@ html,body{background:var(--grad-bg);background-attachment:fixed;color:var(--fg);
 .btn-r{background:var(--rose);color:oklch(0.13 0.02 310);box-shadow:var(--glow)}.btn-r:hover{transform:translateY(-2px);filter:brightness(1.1)}
 .btn-c{background:transparent;border:1px solid oklch(0.78 0.18 200/0.5);color:var(--cyan)}.btn-c:hover{background:oklch(0.78 0.18 200/0.1)}
 .btn-g{background:transparent;border:none;color:oklch(0.6 0.04 320);font-size:.8rem;text-decoration:underline;font-family:var(--fd);cursor:pointer;padding:.4rem}
-/* OVERLAY */
 .ov{position:fixed;inset:0;z-index:100;display:flex;align-items:flex-end;justify-content:center;background:oklch(0/0.7);backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .25s;padding:0 .75rem}
 .ov.open{opacity:1;pointer-events:all}
 .sheet{background:oklch(0.18 0.03 320/0.97);border-radius:1.5rem 1.5rem 0 0;border-top:1px solid oklch(0.45 0.18 350/0.4);padding:1.25rem 1.5rem 2.5rem;width:100%;max-width:430px;transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);backdrop-filter:blur(20px);box-shadow:var(--glow)}
@@ -119,7 +112,6 @@ input[type=file]{display:none}
 .av-circ{width:80px;height:80px;border-radius:50%;background:var(--grad-hero);border:3px solid oklch(0.7 0.27 350/0.6);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;position:relative}
 .av-circ img{width:100%;height:100%;object-fit:cover}
 .cam-b{position:absolute;bottom:-2px;right:-2px;width:26px;height:26px;border-radius:50%;background:var(--rose);border:2px solid var(--card);display:flex;align-items:center;justify-content:center;font-size:.65rem;box-shadow:var(--glow)}
-/* PAIR MODAL */
 .pcode{position:relative;overflow:hidden;border-radius:1rem;border:1px solid oklch(0.45 0.18 350/0.5);background:var(--grad-hero);padding:1rem 1.5rem;text-align:center;font-family:var(--fm);font-size:2rem;font-weight:700;letter-spacing:.2em;color:#fff;box-shadow:var(--glow);margin-bottom:.35rem}
 .pcode .cyber{position:absolute;inset:0;opacity:.3;pointer-events:none}
 .pcode span{position:relative;text-shadow:0 0 20px oklch(0.7 0.27 350/0.6)}
@@ -131,7 +123,6 @@ input[type=file]{display:none}
 .cinp{text-align:center;font-family:var(--fm);font-size:1.5rem;font-weight:700;letter-spacing:.3em}
 .pstatus{text-align:center;font-size:.82rem;margin:.5rem 0;min-height:1.25rem}
 .pstatus.ok{color:var(--mint)}.pstatus.err{color:oklch(0.65 0.25 25)}
-/* HERO */
 .hero{position:relative;margin:1rem;border-radius:1.5rem;overflow:hidden;background:var(--grad-hero);padding:1.5rem 1.25rem;color:#fff;box-shadow:var(--glow)}
 .hero .cyber{position:absolute;inset:0;opacity:.4;pointer-events:none}
 .hblob1{position:absolute;top:-2.5rem;right:-2.5rem;width:10rem;height:10rem;border-radius:50%;background:oklch(0.7 0.27 350/0.3);filter:blur(48px);pointer-events:none}
@@ -147,13 +138,11 @@ input[type=file]{display:none}
 .dnum{font-family:var(--fd);font-size:3rem;font-weight:700;color:#fff;text-shadow:0 0 20px oklch(0.7 0.27 350/0.6);line-height:1}
 .dlbl{display:flex;align-items:center;gap:.4rem;font-size:.75rem;color:rgba(255,255,255,.85)}
 .spill{display:inline-flex;align-items:center;gap:.5rem;border-radius:50px;border:1px solid rgba(255,255,255,.3);background:rgba(0,0,0,.3);padding:.3rem .85rem;font-size:.75rem;backdrop-filter:blur(8px);color:#fff;margin:.6rem auto 0;display:block;width:fit-content}
-/* CHIPS */
 .chips{display:flex;gap:.5rem;overflow-x:auto;padding:.5rem 1rem;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}
 .chip{flex-shrink:0;white-space:nowrap;border-radius:50px;border:1px solid oklch(0.45 0.18 350/0.4);background:oklch(0.18 0.03 320/0.6);padding:.4rem .9rem;font-size:.75rem;font-weight:500;cursor:pointer;transition:all .2s;color:rgba(255,255,255,.8)}
 .chip.on{border-color:var(--rose);background:var(--rose);color:oklch(0.13 0.02 310);box-shadow:var(--glow)}
 .sechdr{display:flex;align-items:center;justify-content:space-between;padding:.5rem 1rem;font-size:.875rem;font-weight:600}
 .sechdr button{background:none;border:none;color:var(--rose);font-size:.75rem;font-family:var(--fd);cursor:pointer}
-/* QUIZ CARDS */
 .qlist{display:flex;flex-direction:column;gap:.75rem;padding:0 1rem 1.5rem}
 .qcard{position:relative;display:flex;align-items:center;gap:.75rem;border-radius:1rem;padding:1rem;color:#fff;box-shadow:var(--shadow);cursor:pointer;transition:all .25s;overflow:hidden;animation:fup .35s ease both}
 @keyframes fup{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
@@ -173,7 +162,6 @@ input[type=file]{display:none}
 .grad-rose{background:var(--grad-rose)}.grad-peach{background:var(--grad-peach)}.grad-violet{background:var(--grad-violet)}
 .grad-gold{background:var(--grad-gold)}.grad-mint{background:var(--grad-mint)}.grad-cyan{background:var(--grad-cyan)}
 .grad-magenta{background:var(--grad-magenta)}.grad-lav{background:var(--grad-lav)}
-/* PLAY */
 #sp{background:var(--bg)}
 .plhdr{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:.75rem;border-bottom:1px solid var(--border);background:oklch(0.18 0.03 320);padding:.75rem 1rem}
 .bk,.xb{width:2rem;height:2rem;border-radius:50%;border:none;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);transition:background .2s;flex-shrink:0;font-size:1rem}
@@ -187,11 +175,13 @@ input[type=file]{display:none}
 .qlbl{font-size:.75rem;color:var(--muted);margin-bottom:.35rem}
 .qprompt{font-family:var(--fd);font-size:1.25rem;font-weight:600;line-height:1.4;color:var(--fg);margin-bottom:1.35rem}
 .qprompt em{font-style:normal;color:var(--rose-d)}
-/* ANSWER BTNs */
-.lrow{display:flex;gap:.75rem}
-.lbtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:.5rem;border-radius:1rem;border:2px solid var(--border);background:oklch(0.18 0.03 320/0.6);padding:1rem .75rem;cursor:pointer;transition:all .22s;font-family:var(--fd)}
+/* ANSWER BUTTONS */
+.lrow{display:flex;gap:.75rem;flex-wrap:wrap}
+.lbtn{flex:1;min-width:calc(50% - .375rem);display:flex;flex-direction:column;align-items:center;gap:.5rem;border-radius:1rem;border:2px solid var(--border);background:oklch(0.18 0.03 320/0.6);padding:1rem .75rem;cursor:pointer;transition:all .22s;font-family:var(--fd)}
 .lbtn:hover,.lbtn.sel{border-color:var(--rose);background:oklch(0.7 0.27 350/0.2)}
-.lbtn:disabled{cursor:not-allowed}
+.lbtn:disabled{cursor:not-allowed;opacity:.6}
+.lbtn.sel-both{border-color:var(--mint);background:oklch(0.78 0.18 175/0.2)}
+.lbtn.sel-neither{border-color:var(--lav);background:oklch(0.7 0.18 295/0.2)}
 .lav{width:48px;height:48px;border-radius:50%;background:var(--grad-hero);display:flex;align-items:center;justify-content:center;font-size:1.2rem;overflow:hidden}
 .lav img{width:100%;height:100%;object-fit:cover}
 .trow{display:flex;align-items:stretch;gap:.65rem}
@@ -214,7 +204,6 @@ input[type=file]{display:none}
 .ocard textarea:focus{border-color:var(--rose)}
 .ocard textarea::placeholder{color:oklch(0.55 0.04 320/0.4)}
 .photocard{border-radius:1rem;border:1px solid var(--border);background:var(--grad-lav);padding:1.25rem;margin-bottom:.85rem}
-/* REVEAL */
 .revcard{border-radius:1rem;border:1px solid var(--border);background:var(--card);padding:1rem;margin-top:1.25rem;animation:fup .3s ease}
 .revlbl{font-family:var(--fm);font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.75rem}
 .revrow{display:flex;align-items:center;gap:.65rem;margin-bottom:.6rem}
@@ -223,7 +212,7 @@ input[type=file]{display:none}
 .rans{flex:1;border-radius:.5rem;border:1px solid oklch(0.7 0.27 350/0.3);background:oklch(0.13 0.02 310/0.6);padding:.4rem .75rem;font-size:.85rem;color:var(--fg)}
 .rans strong{color:var(--rose)}
 .mpill{display:block;width:fit-content;margin:.5rem auto 0;border-radius:50px;background:oklch(0.78 0.18 175/0.9);padding:.25rem .85rem;font-size:.72rem;font-weight:700;color:oklch(0.13 0.02 310)}
-/* WAIT */
+/* WAIT STATE */
 .wbox{border-radius:1rem;border:1px dashed oklch(0.78 0.18 200/0.5);background:oklch(0.78 0.18 200/0.08);padding:1.25rem;text-align:center;margin-top:1.25rem}
 .wdots span{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--cyan);margin:0 2px;animation:bop .8s ease infinite}
 .wdots span:nth-child(2){animation-delay:.15s}.wdots span:nth-child(3){animation-delay:.3s}
@@ -242,7 +231,6 @@ input[type=file]{display:none}
 .achip.m{background:oklch(0.30 0.10 175);color:var(--mint)}
 .achip.d{background:var(--rose-soft);color:var(--rose-d)}
 .achip.p{background:var(--lav-soft);color:var(--lav)}
-/* DISCUSS */
 .dcard{border-radius:1rem;border:1px solid var(--border);background:var(--card);padding:1rem;text-align:left;margin-bottom:1rem}
 .dtitle{font-size:.875rem;font-weight:500;margin-bottom:.65rem}
 .msgs{display:flex;flex-direction:column;gap:.4rem;max-height:10rem;overflow-y:auto;margin-bottom:.65rem}
@@ -256,10 +244,8 @@ input[type=file]{display:none}
 .cinput:focus{border-color:var(--rose)}.cinput::placeholder{color:oklch(0.55 0.04 320/0.4)}
 .csend{width:2.25rem;height:2.25rem;border-radius:50%;background:var(--rose);color:oklch(0.13 0.02 310);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:var(--glow);transition:all .2s;flex-shrink:0}
 .csend:hover{transform:scale(1.1)}
-/* DISCUSS TAB */
 .dtab-grid{display:flex;flex-direction:column;gap:.75rem;padding:0 1rem 1.5rem}
 .dqc{border-radius:1rem;border:1px solid oklch(0.45 0.18 350/0.3);background:oklch(0.18 0.03 320/0.7);padding:1rem;backdrop-filter:blur(8px);box-shadow:var(--shadow)}
-/* PROFILE */
 .pbanner{position:relative;overflow:hidden;background:var(--grad-prof);padding:2.5rem 1rem 4rem;text-align:center}
 .pblob{position:absolute;top:-2.5rem;right:-2.5rem;width:10rem;height:10rem;border-radius:50%;background:oklch(0.7 0.27 350/0.3);filter:blur(48px);pointer-events:none}
 .paw{position:relative;display:inline-block;cursor:pointer}
@@ -278,6 +264,8 @@ input[type=file]{display:none}
 .srow:hover{border-color:var(--rose);box-shadow:var(--glow)}
 .sicon{width:2rem;height:2rem;border-radius:50%;background:oklch(0.7 0.27 350/0.2);display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0;color:var(--rose)}
 .slbl{flex:1;font-size:.88rem;font-weight:500}
+/* waiting for partner banner */
+.waiting-banner{border-radius:.75rem;border:1px dashed oklch(0.78 0.18 200/0.5);background:oklch(0.78 0.18 200/0.08);padding:.85rem 1rem;text-align:center;margin-top:1rem;font-size:.8rem;color:var(--cyan)}
 </style>
 </head>
 <body>
@@ -291,7 +279,6 @@ input[type=file]{display:none}
   <p class="w-sub">Your couple quiz book — now synced in real time 💕</p>
   <div class="wbtns">
     <button class="btn btn-r" onclick="openM('am','signup')">✨ Create account</button>
-    <button class="btn btn-c" onclick="doGoogle()">🔍 Continue with Google</button>
     <button class="btn-g" onclick="openM('am','login')">Already have an account? Sign in</button>
   </div>
 </div>
@@ -341,11 +328,10 @@ input[type=file]{display:none}
 
   <div class="scroll" id="tab-activities" style="display:none">
     <div style="padding:1.25rem 1rem .5rem;text-align:center">
-      <h1 style="font-family:var(--fd);font-size:1.5rem;font-weight:700;color:var(--rose);text-shadow:0 0 20px oklch(0.7 0.27 350/0.6)">Questions & Games</h1>
-      <p style="font-size:.75rem;color:var(--muted);margin-top:.25rem">Pick a category and play together</p>
+      <h1 style="font-family:var(--fd);font-size:1.5rem;font-weight:700;color:var(--rose);text-shadow:0 0 20px oklch(0.7 0.27 350/0.6)">Past Quizzes</h1>
+      <p style="font-size:.75rem;color:var(--muted);margin-top:.25rem">Review your completed quizzes together</p>
     </div>
-    <div id="catscroll" style="display:flex;gap:.75rem;overflow-x:auto;padding:.5rem 1rem;scrollbar-width:none"></div>
-    <div style="height:1.5rem"></div>
+    <div id="act-content" style="padding:0 1rem 80px"></div>
   </div>
 
   <div class="scroll" id="tab-discuss" style="display:none">
@@ -388,7 +374,7 @@ input[type=file]{display:none}
 
   <nav class="bnav">
     <button class="ni active" id="n-home" onclick="showTab('home')"><span style="font-size:1.2rem">🏠</span><span>Home</span></button>
-    <button class="ni" id="n-activities" onclick="showTab('activities')"><span style="font-size:1.2rem">📊</span><span>Activities</span></button>
+    <button class="ni" id="n-activities" onclick="showTab('activities')"><span style="font-size:1.2rem">📊</span><span>History</span></button>
     <button class="ni" id="n-discuss" onclick="showTab('discuss')"><span style="font-size:1.2rem">💬</span><span>Discuss</span></button>
     <button class="ni" id="n-profile" onclick="showTab('profile')"><span style="font-size:1.2rem">👤</span><span>Profile</span></button>
   </nav>
@@ -424,26 +410,27 @@ input[type=file]{display:none}
   </div>
 </div>
 
-<!-- ✅ APP SCRIPT - runs AFTER Firebase is initialized above -->
 <script>
-const KEY='ls_fb2';
+const KEY='ls_fb3'; // bumped key to clear old broken state
 let S=load(),CQ=null,CQs=[],CQi=0,myA=[],ptA=[],msgs={};
-let myRef=null,ptRef=null,chatRefs={};
+// Track which answer the partner sent per question index
+let ptLiveAnswers={}; 
+let ptAnswerListeners={};
 
-// ── FIREBASE HELPERS (module version) ──
-// Queue setup until Firebase module is ready
+// ── FIREBASE ──
 function runWhenFbReady(fn){
-  if(window.fbReady && window.FB) fn();
-  else { window._fbQueue = window._fbQueue||[]; window._fbQueue.push(fn); }
+  if(window.fbReady&&window.FB)fn();
+  else{window._fbQueue=window._fbQueue||[];window._fbQueue.push(fn);}
+}
+function fbUpdate(path,data){
+  runWhenFbReady(()=>{try{FB.update(FB.ref(path),data)}catch(e){}});
 }
 
 function fbSetup(){
   runWhenFbReady(()=>{
-    const r = FB.ref('users/'+S.pairCode);
+    const r=FB.ref('users/'+S.pairCode);
     FB.set(r,{name:S.name,avatar:S.avatar,pairCode:S.pairCode,online:true,ts:Date.now()});
-    const disc = FB.onDisconnect(r);
-    disc.update({online:false,ts:Date.now()});
-    myRef = r;
+    FB.onDisconnect(r).update({online:false,ts:Date.now()});
     if(S.paired&&S.pairedCode){
       FB.get(FB.ref('users/'+S.pairedCode)).then(snap=>{
         const d=snap.val();
@@ -453,14 +440,10 @@ function fbSetup(){
     }
   });
 }
-function fbUpdate(path,data){
-  runWhenFbReady(()=>{ try{ FB.update(FB.ref(path),data) }catch(e){} });
-}
+
 function fbListenPartner(code){
   runWhenFbReady(()=>{
-    const r = FB.ref('users/'+code);
-    ptRef = r;
-    FB.onValue(r, snap=>{
+    FB.onValue(FB.ref('users/'+code),snap=>{
       const d=snap.val();if(!d)return;
       S.partnerName=d.name||S.partnerName;
       S.partnerAvatar=d.avatar||S.partnerAvatar;
@@ -475,31 +458,59 @@ function fbListenPartner(code){
     });
   });
 }
-function fbSendChat(qid,text){
+
+// ── ANSWER SYNC: write my answer, listen for partner's ──
+function fbWriteMyAnswer(qid,qIdx,val){
+  if(!S.pairCode)return;
+  runWhenFbReady(()=>{
+    FB.update(FB.ref('answers/'+S.pairCode+'/'+qid),{[qIdx]:val,updatedAt:Date.now()});
+  });
+}
+function fbListenPartnerAnswers(qid,cb){
   if(!S.paired||!S.pairedCode)return;
   runWhenFbReady(()=>{
-    const room=[S.pairCode,S.pairedCode].sort().join('_');
-    FB.push(FB.ref('chats/'+room+'/'+qid),{senderId:S.pairCode,senderName:S.name||'You',text,time:Date.now()});
+    FB.onValue(FB.ref('answers/'+S.pairedCode+'/'+qid),snap=>{
+      const d=snap.val()||{};
+      ptLiveAnswers=d;
+      if(cb)cb(d);
+    });
+  });
+}
+
+// ── CHAT ──
+function fbSendChat(qid,text){
+  if(!S.pairCode)return;
+  runWhenFbReady(()=>{
+    // Use sorted pair room so both sides write to same node
+    const room=S.paired&&S.pairedCode?[S.pairCode,S.pairedCode].sort().join('_'):S.pairCode;
+    FB.push(FB.ref('chats/'+room+'/'+qid),{
+      senderId:S.pairCode,
+      senderName:S.name||'You',
+      text,
+      time:Date.now()
+    });
   });
 }
 const _chatListened={};
-function fbListenChat(qid){
-  if(!S.paired||!S.pairedCode)return;
-  if(_chatListened[qid])return;
-  _chatListened[qid]=true;
+function fbListenChat(qid,renderFn){
+  const room=S.paired&&S.pairedCode?[S.pairCode,S.pairedCode].sort().join('_'):S.pairCode;
+  const key=room+'_'+qid;
+  if(_chatListened[key])return;
+  _chatListened[key]=true;
   runWhenFbReady(()=>{
-    const room=[S.pairCode,S.pairedCode].sort().join('_');
     const seenKeys=new Set();
-    FB.onChildAdded(FB.ref('chats/'+room+'/'+qid), snap=>{
+    FB.onChildAdded(FB.ref('chats/'+room+'/'+qid),snap=>{
       if(seenKeys.has(snap.key))return;
       seenKeys.add(snap.key);
       const m=snap.val();
+      // FIX: isMe is based on senderId matching MY pairCode (not partner's)
       m.isMe=(m.senderId===S.pairCode);
       if(!msgs[qid])msgs[qid]=[];
-      msgs[qid].push(m);S.messages=msgs;save();
+      // Avoid duplicates
+      const exists=msgs[qid].find(x=>x.time===m.time&&x.senderId===m.senderId&&x.text===m.text);
+      if(!exists){msgs[qid].push(m);S.messages=msgs;save();}
       renderDiscuss();
-      const el=document.getElementById('fmsgs');
-      if(el){el.innerHTML=msgs[qid].map(mg=>`<div class="bub ${mg.isMe?'me':'pt'}" style="margin-bottom:.3rem"><span style="font-size:.65rem;opacity:.6">${mg.isMe?'You':mg.senderName||'Partner'}</span><br>${mg.text}</div>`).join('');el.scrollTop=el.scrollHeight;}
+      if(renderFn)renderFn();
     });
   });
 }
@@ -541,7 +552,7 @@ const QUIZZES=[
   {id:51,topic:'travel',name:'Travel Styles',fmt:'tot',emoji:'🧳',qs:[['Plan every detail in advance','Book a flight and figure it out'],['Luxury hotel','Authentic local guesthouse'],['Beach destination','Cultural city'],['One long trip per year','Several short weekend breaks'],['Known tourist spots','Off-the-beaten-path hidden gems'],['Road trip','Fly and explore'],['Travel light (carry-on only)','Pack everything just in case']]},
   {id:52,topic:'travel',name:'Travel Habits',fmt:'likely',emoji:'✈️',qs:['…overpack and then complain about carrying it?','…get to the airport dangerously late?','…get into an argument about directions?','…be doing all the research and planning before the trip?','…be hungry and grumpy in transit?','…talk to strangers and make new friends on a trip?','…take the most photos?','…want to see "one more thing" when everyone else is exhausted?']},
   {id:61,topic:'family',name:'Children & Parenting',fmt:'discuss',emoji:'👶',qs:['Do you both want children? How many? When?','How do you align on parenting styles — strict vs. permissive?','How would you handle a difference in opinion on a major parenting decision?','What values do you most want to pass on to your children?','How would you handle a child who is very different from either of you?','What does co-parenting responsibility look like to you?']},
-  {id:66,topic:'family',name:'Parenting Styles',fmt:'tot',emoji:'🍼',qs:[['Strict structure and rules','Relaxed and child-led parenting'],['Religious upbringing','Secular with open conversation about beliefs'],['Private school','Public school'],['Stay-at-home parent','Both parents working'],['Helicopter parenting','Free-range parenting'],['Pocket money with responsibility','Provide everything freely']]},
+  {id:66,topic:'family',name:'Parenting Styles',fmt:'tot',emoji:'🍼',qs:[['Strict structure and rules','Relaxed and child-led parenting'],['Religious upbringing','Secular with open conversation about beliefs'],['Private school','Public school'],['Stay-at-home parent','Both partners working'],['Helicopter parenting','Free-range parenting'],['Pocket money with responsibility','Provide everything freely']]},
   {id:71,topic:'hobbies',name:'Shared Hobbies',fmt:'discuss',emoji:'🎯',qs:['Is there a hobby you\'ve always wanted to try with your partner but never have?','Do you have enough shared activities that you genuinely both enjoy?','Is there a hobby of your partner\'s you\'ve tried to love but just can\'t?','How do you balance time for individual hobbies vs. couple hobbies?','Could you see yourselves starting a creative project or business together?','Is there a hobby from your past you\'ve abandoned that you\'d like to revisit?']},
   {id:77,topic:'hobbies',name:'Entertainment & Pop Culture',fmt:'likely',emoji:'🎬',qs:['…binge an entire TV series in one weekend?','…start a new show without waiting for the other?','…cry during a movie or series?','…know all the lyrics to a guilty pleasure song?','…spend hours on YouTube or social media falling into a rabbit hole?','…be more into video games?','…have a running list of recommended films and shows to watch?']},
   {id:81,topic:'lifestyle',name:'Daily Routines',fmt:'tot',emoji:'☀️',qs:[['Morning workout','Evening workout'],['Slow morning with coffee','Jump straight into work'],['Cook a fresh meal every night','Meal prep for the week'],['Wind down with a show','Read before sleeping'],['Phone-free mornings','Scroll immediately on waking'],['Early to bed, early to rise','Night owl and slow morning']]},
@@ -576,21 +587,18 @@ function renderAuth(t){
     <div class="field"><label>Email</label><input type="email" id="semail" placeholder="you@example.com"></div>
     <div class="field"><label>Password</label><input type="password" id="spw" placeholder="••••••••"></div>
     <button class="btn btn-r" onclick="doSignup()" style="margin-top:.5rem">Create account ✨</button>
-    <button class="btn btn-c" onclick="doGoogle()" style="margin-top:.5rem">🔍 Continue with Google</button>
     <button class="btn-g" onclick="renderAuth('login')" style="display:block;text-align:center;margin-top:.75rem;width:100%">Already have an account? Sign in</button>`;
   } else {
     c.innerHTML=`<div class="handle"></div><h2 class="mtitle">Welcome back 💕</h2>
     <div class="field"><label>Email</label><input type="email" placeholder="you@example.com"></div>
     <div class="field"><label>Password</label><input type="password" placeholder="••••••••"></div>
     <button class="btn btn-r" onclick="doLogin()" style="margin-top:.5rem">Sign in ✨</button>
-    <button class="btn btn-c" onclick="doGoogle()" style="margin-top:.5rem">🔍 Continue with Google</button>
     <button class="btn-g" onclick="renderAuth('signup')" style="display:block;text-align:center;margin-top:.75rem;width:100%">Don't have an account? Sign up</button>`;
   }
 }
 function prevSAv(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{sapAv=ev.target.result;const c=document.getElementById('savc');c.innerHTML=`<img src="${ev.target.result}"><div class="cam-b">📷</div><input type="file" id="sav" accept="image/*" onchange="prevSAv(event)">`};r.readAsDataURL(f)}
 function doSignup(){const n=document.getElementById('sname').value.trim();if(!n){alert('Please enter your name!');return}S.name=n;S.avatar=sapAv||'';S.authed=true;if(!S.daysStart)S.daysStart=Date.now();save();closeM('am');launch()}
 function doLogin(){S.authed=true;if(!S.daysStart)S.daysStart=Date.now();save();closeM('am');launch()}
-function doGoogle(){const ns=['Alex','Sam','Jordan','Taylor','Riley','Emma','Liam'];if(!S.name)S.name=ns[Math.floor(Math.random()*ns.length)];S.authed=true;if(!S.daysStart)S.daysStart=Date.now();save();closeM('am');launch()}
 
 function launch(){
   document.getElementById('sw').classList.remove('active');
@@ -629,7 +637,7 @@ function connectPartner(){
 }
 
 // ── RENDER ──
-function renderAll(){updateTopbar();renderHero();renderChips();renderQList(null);renderCats();renderDiscuss();renderProfile()}
+function renderAll(){updateTopbar();renderHero();renderChips();renderQList(null);renderDiscuss();renderProfile();renderActivities();}
 function updateTopbar(){
   const av=document.getElementById('tpavc'),nm=document.getElementById('tpnm'),dot=document.getElementById('tpdot');
   if(S.paired&&S.partnerName){nm.textContent=S.partnerName;dot.style.display='inline-block';av.innerHTML=S.partnerAvatar?`<img src="${S.partnerAvatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:S.partnerName[0]}
@@ -673,50 +681,80 @@ function renderQList(tid){
     </div>`;
   }).join('');
 }
-function renderCats(){
-  document.getElementById('catscroll').innerHTML=TOPICS.map(t=>`<div class="qcard grad-${t.color}" style="flex-shrink:0;width:7rem;height:8rem;flex-direction:column;align-items:center;justify-content:space-between;padding:.75rem" onclick="filterT('${t.id}',document.querySelector('.chip'))">
-    <div class="cyber"></div><span style="font-size:2rem;position:relative">${t.label.split(' ')[0]}</span>
-    <span style="font-size:.72rem;font-weight:600;position:relative;text-align:center;line-height:1.2">${t.label.replace(/^[^\s]+\s/,'')}</span>
-  </div>`).join('');
-}
+
 function showTab(t){
   document.getElementById('sp').classList.remove('active');document.getElementById('sa').classList.add('active');
-  ['home','activities','discuss','profile'].forEach(x=>{document.getElementById('tab-'+x).style.display=x===t?'block':'none';document.getElementById('n-'+x).classList.toggle('active',x===t)});
-  if(t==='discuss')renderDiscuss();if(t==='profile')renderProfile();
+  ['home','activities','discuss','profile'].forEach(x=>{
+    document.getElementById('tab-'+x).style.display=x===t?'block':'none';
+    document.getElementById('n-'+x).classList.toggle('active',x===t);
+  });
+  if(t==='discuss'){renderDiscuss();// Start listening to all quiz chats
+    (S.quizHistory||[]).forEach(r=>fbListenChat(r.id,renderDiscuss));}
+  if(t==='profile')renderProfile();
+  if(t==='activities')renderActivities();
 }
 
 function renderActivities(){
   const h=S.quizHistory||[];
-  const el=document.getElementById('tab-activities');if(!el)return;
-  if(!h.length){el.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;gap:1rem;color:var(--muted);text-align:center;padding:2rem"><span style="font-size:3rem">📊</span><p style="font-weight:600">Complete a quiz to see your history!</p></div>';return;}
-  let html2='<div style="padding:1rem 1rem 80px"><div style="font-size:.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.75rem">Completed Quizzes</div>';
-  h.forEach((r,idx)=>{
+  const el=document.getElementById('act-content');if(!el)return;
+  if(!h.length){
+    el.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:40vh;gap:1rem;color:var(--muted);text-align:center;padding:2rem"><span style="font-size:3rem">📊</span><p style="font-weight:600">Complete a quiz to see your history!</p></div>';
+    return;
+  }
+  el.innerHTML=h.map((r,idx)=>{
     const g=TGRAD[QUIZZES.find(q=>q.id===r.id)?.topic]||'rose';
-    html2+='<div class="qcard grad-'+g+'" style="margin-bottom:.75rem" onclick="openReview('+idx+')"><div class="cyber"></div><div class="qblob"></div><div class="qem">'+r.emoji+'</div><div class="qi"><div class="qn">'+r.name+'</div><div class="qm"><span class="ftag">'+new Date(r.date).toLocaleDateString()+'</span></div></div><div class="qr"><span class="dtag">'+r.pct+'% 💕</span></div></div>';
-  });
-  html2+='</div>';el.innerHTML=html2;
+    return`<div class="qcard grad-${g}" style="margin-bottom:.75rem" onclick="openReview(${idx})">
+      <div class="cyber"></div><div class="qblob"></div>
+      <div class="qem">${r.emoji}</div>
+      <div class="qi"><div class="qn">${r.name}</div>
+        <div class="qm"><span class="ftag">${new Date(r.date).toLocaleDateString()}</span></div>
+      </div>
+      <div class="qr"><span class="dtag">${r.pct}% 💕</span></div>
+    </div>`;
+  }).join('');
 }
 function openReview(idx){const entry=(S.quizHistory||[])[idx];if(entry)reviewQuiz(entry);}
 
 // ── QUIZ PLAY ──
 function startQ(id){
   CQ=QUIZZES.find(q=>q.id===id);if(!CQ)return;
-  CQi=0;myA=[];ptA=[];CQs=CQ.qs;
+  CQi=0;myA=[];ptA=[];ptLiveAnswers={};CQs=CQ.qs;
   document.getElementById('sa').classList.remove('active');document.getElementById('sp').classList.add('active');
   document.getElementById('pttitle').textContent=CQ.emoji+' '+CQ.name;
-  fbListenChat(CQ.id);renderQ();
+  // Start listening for partner answers in real time
+  if(S.paired&&S.pairedCode)fbListenPartnerAnswers(CQ.id);
+  fbListenChat(CQ.id,()=>{const el=document.getElementById('fmsgs');if(el)renderFMsgs();});
+  renderQ();
 }
+
 function renderQ(){
   const q=CQs[CQi],total=CQs.length,fmt=CQ.fmt;
   document.getElementById('pfill').style.width=Math.round((CQi/total)*100)+'%';
   document.getElementById('pctxt').textContent=(CQi+1)+'/'+total;
   const body=document.getElementById('pbody');
+  // FIX: use actual names from state, not "Me"/"Partner"
+  const myName=S.name||'You';
+  const ptName=S.partnerName||'Partner';
   let h=`<div class="qa"><div class="qlbl">Question ${CQi+1} of ${total}</div>`;
   if(fmt==='likely'){
     h+=`<div class="qprompt">Who is more likely to…<br><em>${q}</em></div>
     <div class="lrow">
-      <button class="lbtn" onclick="pickA(S.name||'Me',this)"><div class="lav">${avHTML(S.avatar,S.name)}</div><span style="font-size:.85rem;font-weight:600;color:var(--fg)">${S.name||'Me'}</span></button>
-      <button class="lbtn" onclick="pickA(S.partnerName||'Partner',this)"><div class="lav" style="background:var(--grad-cyan)">${avHTML(S.partnerAvatar,S.partnerName)}</div><span style="font-size:.85rem;font-weight:600;color:var(--fg)">${S.partnerName||'Partner'}</span></button>
+      <button class="lbtn" data-val="${myName}" onclick="pickA(this.dataset.val,this)">
+        <div class="lav">${avHTML(S.avatar,S.name)}</div>
+        <span style="font-size:.85rem;font-weight:600;color:var(--fg)">${myName}</span>
+      </button>
+      <button class="lbtn" data-val="${ptName}" onclick="pickA(this.dataset.val,this)">
+        <div class="lav" style="background:var(--grad-cyan)">${avHTML(S.partnerAvatar,S.partnerName)}</div>
+        <span style="font-size:.85rem;font-weight:600;color:var(--fg)">${ptName}</span>
+      </button>
+      <button class="lbtn sel-both" data-val="Both of us" onclick="pickA(this.dataset.val,this)" style="min-width:100%;flex-basis:100%">
+        <span style="font-size:1.2rem">💑</span>
+        <span style="font-size:.85rem;font-weight:600;color:var(--fg)">Both of us</span>
+      </button>
+      <button class="lbtn sel-neither" data-val="Neither" onclick="pickA(this.dataset.val,this)" style="min-width:100%;flex-basis:100%">
+        <span style="font-size:1.2rem">🤷</span>
+        <span style="font-size:.85rem;font-weight:600;color:var(--fg)">Neither</span>
+      </button>
     </div>`;
   } else if(fmt==='tot'){
     h+=`<div class="qprompt">⚡ This or That?</div><div class="trow">
@@ -734,8 +772,8 @@ function renderQ(){
       <button class="abtn" onclick="pickA('Strongly Disagree',this)">Strongly Disagree</button></div>`;
   } else if(fmt==='nhie'){
     h+=`<div class="qprompt">🙈 Never have I ever…<br><em>${q}</em></div><div class="nrow">
-      <button class="nbtn nhave" onclick="pickA('I HAVE',this)">✋ I Have</button>
-      <button class="nbtn nnever" onclick="pickA('NEVER',this)">🙈 Never</button></div>`;
+      <button class="nbtn nhave" onclick="pickA('I Have',this)">✋ I Have</button>
+      <button class="nbtn nnever" onclick="pickA('Never',this)">🙈 Never</button></div>`;
   } else {
     if(fmt==='photo')h+=`<div class="photocard"><div style="font-size:2rem;margin-bottom:.5rem">📸</div><p style="font-size:.9rem;font-style:italic;color:rgba(255,255,255,.9)">${q}</p><p style="font-size:.75rem;color:rgba(255,255,255,.7);margin-top:.5rem">Grab your phone, find a photo, and show each other!</p></div>`;
     else h+=`<div class="qprompt">${fmt==='deep'?'💡':'🗣️'} ${q}</div>`;
@@ -745,98 +783,159 @@ function renderQ(){
   h+=`<div id="rarea"></div></div>`;
   body.innerHTML=h;body.scrollTo(0,0);
 }
+
 function pickA(val,btn){
+  // Disable all answer buttons
   btn.closest('.qa')?.querySelectorAll('.lbtn,.tbtn,.wbtn,.abtn,.nbtn').forEach(b=>b.disabled=true);
   btn.classList.add('sel');
   myA[CQi]=val;
-  if(S.paired&&S.pairedCode){
-    runWhenFbReady(()=>{ FB.update(FB.ref('quizAnswers/'+S.pairCode+'/'+CQ.id),{[CQi]:val,updatedAt:Date.now()}); });
-  }
-  fetchPartnerAnswer(CQi,(ptVal)=>{
-    ptA[CQi]=ptVal;showReveal(val,ptVal);setTimeout(()=>nextQ(),2200);
+  // Write my answer to Firebase
+  fbWriteMyAnswer(CQ.id,CQi,val);
+  // Now wait for partner's real answer (with timeout fallback)
+  waitForPartnerAnswer(CQi,(ptVal)=>{
+    ptA[CQi]=ptVal;
+    showReveal(val,ptVal);
+    setTimeout(()=>nextQ(),2500);
   });
 }
+
+function waitForPartnerAnswer(idx,cb){
+  // If already received it from the live listener
+  if(ptLiveAnswers[idx]!==undefined){
+    cb(ptLiveAnswers[idx]);
+    return;
+  }
+  if(!S.paired||!S.pairedCode){
+    // Solo mode — no partner
+    cb('—');
+    return;
+  }
+  // Show waiting UI
+  const rarea=document.getElementById('rarea');
+  if(rarea){
+    rarea.innerHTML=`<div class="waiting-banner">⏳ Waiting for ${S.partnerName||'partner'} to answer…<div class="wdots" style="margin-top:.5rem"><span></span><span></span><span></span></div></div>`;
+  }
+  // Poll / react — set up a one-time watcher
+  let resolved=false;
+  let attempts=0;
+  const check=()=>{
+    if(resolved)return;
+    if(ptLiveAnswers[idx]!==undefined){
+      resolved=true;cb(ptLiveAnswers[idx]);return;
+    }
+    attempts++;
+    if(attempts<60)setTimeout(check,1000);// poll every sec for 60s
+    else{resolved=true;cb('(no answer)');} // timeout fallback
+  };
+  check();
+}
+
 function pickOpen(){
-  const t=(document.getElementById('oans')?.value||'').trim();myA.push(t||'(shared)');
-  const rps=['Interesting perspective! 😊','I feel similarly...','That\'s so you 😊','Love that you shared that ❤️'];
-  ptA.push(rps[Math.floor(Math.random()*rps.length)]);setTimeout(()=>nextQ(),300);
+  const t=(document.getElementById('oans')?.value||'').trim();
+  myA[CQi]=t||'(shared)';
+  fbWriteMyAnswer(CQ.id,CQi,myA[CQi]);
+  ptA[CQi]=ptLiveAnswers[CQi]||'(shared)';
+  setTimeout(()=>nextQ(),300);
 }
-function genPt(){
-  const q=CQs[CQi],fmt=CQ.fmt;
-  if(fmt==='likely')return Math.random()>.5?'ME':'PARTNER';
-  if(fmt==='tot'||fmt==='wyr')return Array.isArray(q)?q[Math.floor(Math.random()*2)]:'';
-  if(fmt==='agree'){const o=['Strongly Agree','Agree','Disagree','Strongly Disagree'];return o[Math.floor(Math.random()*4)]}
-  if(fmt==='nhie')return Math.random()>.5?'I HAVE':'NEVER';
-  return '';
-}
+
 function showReveal(my,pt){
+  const myName=S.name||'You';
+  const ptName=S.partnerName||'Partner';
   const match=my===pt;
   document.getElementById('rarea').innerHTML=`<div class="revcard">
-    <div class="revlbl">Answers revealed</div>
-    <div class="revrow"><div class="revav">${avHTML(S.avatar,S.name)}</div><div class="rans"><strong>${S.name||'You'}:</strong> ${my}</div></div>
-    <div class="revrow"><div class="revav" style="background:var(--grad-cyan)">${avHTML(S.partnerAvatar,S.partnerName)}</div><div class="rans"><strong>${S.partnerName||'Partner'}:</strong> ${pt}</div></div>
+    <div class="revlbl">Answers revealed 🎉</div>
+    <div class="revrow"><div class="revav">${avHTML(S.avatar,S.name)}</div><div class="rans"><strong>${myName}:</strong> ${my}</div></div>
+    <div class="revrow"><div class="revav" style="background:var(--grad-cyan)">${avHTML(S.partnerAvatar,S.partnerName)}</div><div class="rans"><strong>${ptName}:</strong> ${pt}</div></div>
     ${match?'<div class="mpill">✓ You matched! 💕</div>':''}
   </div>`;
 }
-function nextQ(){CQi++;if(CQi>=CQs.length)finishQ();else renderQ()}
+
+function nextQ(){CQi++;if(CQi>=CQs.length)finishQ();else{ptLiveAnswers={};renderQ();}}
+
 function finishQ(){
-  const matched=myA.filter((a,i)=>a===ptA[i]).length,pct=Math.round((matched/myA.length)*100);
+  const matched=myA.filter((a,i)=>a===ptA[i]).length;
+  const pct=Math.round((matched/myA.length)*100);
   if(!S.completed.includes(CQ.id))S.completed.push(CQ.id);
   S.streak=(S.streak||0)+1;S.matchScore=pct;
-  const entry={id:CQ.id,name:CQ.name,emoji:CQ.emoji,fmt:CQ.fmt,date:Date.now(),matched,total:myA.length,pct,myA:[...myA],ptA:[...ptA],qs:[...CQs],myName:S.name||'You',ptName:S.partnerName||'Partner'};
+  const myName=S.name||'You';
+  const ptName=S.partnerName||'Partner';
+  const entry={id:CQ.id,name:CQ.name,emoji:CQ.emoji,fmt:CQ.fmt,date:Date.now(),matched,total:myA.length,pct,myA:[...myA],ptA:[...ptA],qs:[...CQs],myName,ptName};
   S.quizHistory=[entry,...(S.quizHistory||[])].slice(0,50);
   if(!msgs[CQ.id])msgs[CQ.id]=[];S.messages=msgs;save();
   document.getElementById('pfill').style.width='100%';
-  const items=CQs.map((q,i)=>{const ql=Array.isArray(q)?q.join(' OR '):q;const same=myA[i]===ptA[i];
+  const items=CQs.map((q,i)=>{
+    const ql=Array.isArray(q)?q.join(' OR '):q;
+    const same=String(myA[i])===String(ptA[i]);
     return`<div class="aitem"><div class="aq">${ql.length>60?ql.slice(0,60)+'…':ql}</div>
-    <div class="achips"><span class="achip ${same?'m':'d'}">${S.name||'You'}: ${(myA[i]||'').slice(0,30)}</span>
-    <span class="achip p">${S.partnerName||'Partner'}: ${(ptA[i]||'').slice(0,30)}</span></div></div>`;
+    <div class="achips">
+      <span class="achip ${same?'m':'d'}">${myName}: ${String(myA[i]||'—').slice(0,30)}</span>
+      <span class="achip p">${ptName}: ${String(ptA[i]!==undefined?ptA[i]:'—').slice(0,30)}</span>
+    </div></div>`;
   }).join('');
   document.getElementById('pbody').innerHTML=`<div class="finwrap">
     <span class="finem">${pct>=80?'💞':pct>=50?'💛':'💙'}</span>
     <div class="finpct">${pct}% match!</div>
-    <p class="finsub">${matched} of ${myA.length} answers aligned${pct>=80?' — in sync! 🎉':pct>=50?' — great connection!':', beautifully different!'}</p>
+    <p class="finsub">${matched} of ${myA.length} answers aligned${pct>=80?' — perfectly in sync! 🎉':pct>=50?' — great connection!':', beautifully different!'}</p>
     <div class="acard"><div class="albl">All answers</div>${items}</div>
     <div class="dcard"><div class="dtitle">💬 Discuss this quiz</div>
       <div class="msgs" id="fmsgs" style="display:flex;flex-direction:column;gap:.4rem"></div>
       <div class="crow2"><input class="cinput" id="finp" placeholder="Share your thoughts..." onkeydown="if(event.key==='Enter')sendFin()">
       <button class="csend" onclick="sendFin()">➤</button></div>
     </div>
-    <button class="btn btn-r" onclick="exitPlay()">Back to quizzes 💕</button>
+    <button class="btn btn-r" onclick="exitPlay()" style="margin-top:.5rem">Back to quizzes 💕</button>
   </div>`;
   renderFMsgs();
 }
+
 function renderFMsgs(){
-  const el=document.getElementById('fmsgs');if(!el)return;
-  const m=(msgs||{})[CQ?.id]||[];
-  el.innerHTML=m.length?m.map(mg=>`<div class="bub ${mg.isMe?'me':'pt'}">${mg.text}</div>`).join(''):'<div class="emsg">Start the conversation! 💬</div>';
+  const el=document.getElementById('fmsgs');if(!el||!CQ)return;
+  const m=(msgs||{})[CQ.id]||[];
+  el.innerHTML=m.length?m.map(mg=>`<div class="bub ${mg.isMe?'me':'pt'}">
+    <span style="font-size:.6rem;opacity:.6">${mg.isMe?(S.name||'You'):(mg.senderName||S.partnerName||'Partner')}</span><br>${mg.text}
+  </div>`).join(''):'<div class="emsg">Start the conversation! 💬</div>';
   el.scrollTop=el.scrollHeight;
 }
 function sendFin(){
-  const inp=document.getElementById('finp');if(!inp)return;const t=inp.value.trim();if(!t)return;
-  const qid=CQ?.id;if(!qid)return;
+  const inp=document.getElementById('finp');if(!inp||!CQ)return;
+  const t=inp.value.trim();if(!t)return;
   inp.value='';
-  fbSendChat(qid,t);
-  if(!S.paired){
-    if(!msgs[qid])msgs[qid]=[];
-    msgs[qid].push({isMe:true,senderName:S.name||'You',text:t,time:Date.now()});
+  fbSendChat(CQ.id,t);
+  // Optimistically add my own message (Firebase will confirm via listener)
+  if(!msgs[CQ.id])msgs[CQ.id]=[];
+  const exists=msgs[CQ.id].find(x=>x.text===t&&x.senderId===S.pairCode&&Date.now()-x.time<3000);
+  if(!exists){
+    msgs[CQ.id].push({isMe:true,senderId:S.pairCode,senderName:S.name||'You',text:t,time:Date.now()});
     S.messages=msgs;save();renderFMsgs();
-    setTimeout(()=>{const rps=["So true!","I see your point","That surprised me!","Let's talk more","Haha I love you!"];msgs[qid].push({isMe:false,senderName:S.partnerName||'Partner',text:rps[Math.floor(Math.random()*rps.length)],time:Date.now()});S.messages=msgs;save();renderFMsgs()},1500);
   }
 }
+
 function reviewQuiz(entry){
   CQ=QUIZZES.find(q=>q.id===entry.id);if(!CQ)return;
   CQs=entry.qs;myA=entry.myA;ptA=entry.ptA;
   const pct=entry.pct,matched=entry.matched;
+  const myName=entry.myName||S.name||'You';
+  const ptName=entry.ptName||S.partnerName||'Partner';
   document.getElementById('sa').classList.remove('active');document.getElementById('sp').classList.add('active');
   document.getElementById('pttitle').textContent=CQ.emoji+' '+CQ.name+' — Results';
   document.getElementById('pfill').style.width='100%';
-  const items=CQs.map((q,i)=>{const ql=Array.isArray(q)?q.join(' OR '):q;const same=String(myA[i])===String(ptA[i]);
-    return'<div class="aitem"><div class="aq">'+ql.slice(0,60)+'</div><div class="achips"><span class="achip '+(same?'m':'d')+'">'+(entry.myName||S.name||'You')+': '+String(myA[i]||'—').slice(0,30)+'</span><span class="achip p">'+(entry.ptName||S.partnerName||'Partner')+': '+String(ptA[i]!==undefined?ptA[i]:'—').slice(0,30)+'</span></div></div>';
+  const items=CQs.map((q,i)=>{
+    const ql=Array.isArray(q)?q.join(' OR '):q;
+    const same=String(myA[i])===String(ptA[i]);
+    return`<div class="aitem"><div class="aq">${ql.slice(0,70)}</div>
+    <div class="achips">
+      <span class="achip ${same?'m':'d'}">${myName}: ${String(myA[i]||'—').slice(0,30)}</span>
+      <span class="achip p">${ptName}: ${String(ptA[i]!==undefined?ptA[i]:'—').slice(0,30)}</span>
+    </div></div>`;
   }).join('');
-  document.getElementById('pbody').innerHTML='<div class="finwrap"><span class="finem">'+(pct>=80?'💞':pct>=50?'💛':'💙')+'</span><div class="finpct">'+pct+'% match!</div><p class="finsub">'+matched+' of '+myA.length+' answers aligned</p><div class="acard"><div class="albl">All answers</div>'+items+'</div><button class="btn btn-r" onclick="exitPlay()">← Back</button></div>';
+  document.getElementById('pbody').innerHTML=`<div class="finwrap">
+    <span class="finem">${pct>=80?'💞':pct>=50?'💛':'💙'}</span>
+    <div class="finpct">${pct}% match!</div>
+    <p class="finsub">${matched} of ${myA.length} answers aligned · <span style="color:var(--muted);font-size:.8rem">${new Date(entry.date).toLocaleDateString()}</span></p>
+    <div class="acard"><div class="albl">All answers</div>${items}</div>
+    <button class="btn btn-r" onclick="exitPlay()">← Back</button>
+  </div>`;
 }
-function exitPlay(){document.getElementById('sp').classList.remove('active');document.getElementById('sa').classList.add('active');showTab('home');renderAll()}
+function exitPlay(){document.getElementById('sp').classList.remove('active');document.getElementById('sa').classList.add('active');showTab('home');renderAll();}
 
 // ── DISCUSS TAB ──
 function renderDiscuss(){
@@ -846,10 +945,15 @@ function renderDiscuss(){
     const m=(msgs||{})[r.id]||[];
     return`<div class="dqc">
       <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem">
-        <span style="font-size:1.25rem">${r.emoji}</span><span style="flex:1;font-size:.88rem;font-weight:600">${r.name}</span>
+        <span style="font-size:1.25rem">${r.emoji}</span>
+        <span style="flex:1;font-size:.88rem;font-weight:600">${r.name}</span>
         <span style="font-family:var(--fm);font-size:.65rem;text-transform:uppercase;color:var(--muted)">${m.length} msg</span>
       </div>
-      <div class="msgs" style="display:flex;flex-direction:column;gap:.35rem">${m.length?m.map(mg=>`<div class="bub ${mg.isMe?'me':'pt'}" style="font-size:.72rem">${mg.text}</div>`).join(''):'<div class="emsg" style="font-size:.72rem">No messages yet</div>'}</div>
+      <div class="msgs" style="display:flex;flex-direction:column;gap:.35rem">
+        ${m.length?m.map(mg=>`<div class="bub ${mg.isMe?'me':'pt'}" style="font-size:.72rem">
+          <span style="font-size:.6rem;opacity:.6">${mg.isMe?(S.name||'You'):(mg.senderName||S.partnerName||'Partner')}</span><br>${mg.text}
+        </div>`).join(''):'<div class="emsg" style="font-size:.72rem">No messages yet</div>'}
+      </div>
       <div class="crow2" style="margin-top:.5rem">
         <input class="cinput" id="dc${r.id}" placeholder="Add a comment..." style="font-size:.75rem" onkeydown="if(event.key==='Enter')sendDC(${r.id})">
         <button class="csend" style="width:1.85rem;height:1.85rem;font-size:.8rem" onclick="sendDC(${r.id})">➤</button>
@@ -857,17 +961,22 @@ function renderDiscuss(){
     </div>`;
   }).join('');
 }
+
 function sendDC(qid){
-  const inp=document.getElementById('dc'+qid);if(!inp)return;const t=inp.value.trim();if(!t)return;
+  const inp=document.getElementById('dc'+qid);if(!inp)return;
+  const t=inp.value.trim();if(!t)return;
   inp.value='';
   fbSendChat(qid,t);
-  if(!S.paired){
-    if(!msgs[qid])msgs[qid]=[];
-    msgs[qid].push({isMe:true,senderName:S.name||'You',text:t,time:Date.now()});
+  // Optimistic local add
+  if(!msgs[qid])msgs[qid]=[];
+  const exists=msgs[qid].find(x=>x.text===t&&x.senderId===S.pairCode&&Date.now()-x.time<3000);
+  if(!exists){
+    msgs[qid].push({isMe:true,senderId:S.pairCode,senderName:S.name||'You',text:t,time:Date.now()});
     S.messages=msgs;save();
-    setTimeout(()=>{const rps=["So true!","That's fair!","I love you","Agree!","Interesting..."];msgs[qid].push({isMe:false,senderName:S.partnerName||'Partner',text:rps[Math.floor(Math.random()*rps.length)],time:Date.now()});S.messages=msgs;save();renderDiscuss()},1500);
   }
   renderDiscuss();
+  // Ensure we listen for incoming replies
+  fbListenChat(qid,renderDiscuss);
 }
 
 // ── PROFILE ──
@@ -885,28 +994,14 @@ function renderProfile(){
   document.getElementById('pairlbl').textContent=S.paired?`Paired with ${S.partnerName}`:'Pair code';
 }
 function chAv(){document.getElementById('pffile').click()}
-function handleAv(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{S.avatar=ev.target.result;save();fbUpdate('users/'+S.pairCode,{avatar:S.avatar,name:S.name});renderAll()};r.readAsDataURL(f)}
-function editName(){const n=prompt('Your name:',S.name||'');if(n?.trim()){S.name=n.trim();save();fbUpdate('users/'+S.pairCode,{name:S.name});renderAll()}}
-function editStatus(){const s=prompt('What\'s your vibe right now?',S.status||'');if(s!==null){S.status=s.trim().slice(0,80);save();fbUpdate('users/'+S.pairCode,{status:S.status});renderProfile()}}
-function editDate(){const cur=S.daysStart?new Date(S.daysStart).toISOString().slice(0,10):'';const v=prompt('When did your love story start? (YYYY-MM-DD)',cur);if(!v)return;const t=Date.parse(v);if(!isNaN(t)){S.daysStart=t;save();renderAll()}}
+function handleAv(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{S.avatar=ev.target.result;save();fbUpdate('users/'+S.pairCode,{avatar:S.avatar,name:S.name});renderAll();};r.readAsDataURL(f)}
+function editName(){const n=prompt('Your name:',S.name||'');if(n?.trim()){S.name=n.trim();save();fbUpdate('users/'+S.pairCode,{name:S.name});renderAll();}}
+function editStatus(){const s=prompt('What\'s your vibe right now?',S.status||'');if(s!==null){S.status=s.trim().slice(0,80);save();fbUpdate('users/'+S.pairCode,{status:S.status});renderProfile();}}
+function editDate(){const cur=S.daysStart?new Date(S.daysStart).toISOString().slice(0,10):'';const v=prompt('When did your love story start? (YYYY-MM-DD)',cur);if(!v)return;const t=Date.parse(v);if(!isNaN(t)){S.daysStart=t;save();renderAll();}}
 function installW(){alert('📱 Add to home screen:\n• iPhone: Share → "Add to Home Screen"\n• Android: Menu → "Add to Home Screen"')}
-function resetAll(){if(confirm('Sign out and reset all data?')){fbUpdate('users/'+S.pairCode,{online:false});localStorage.removeItem(KEY);location.reload()}}
+function resetAll(){if(confirm('Sign out and reset all data?')){fbUpdate('users/'+S.pairCode,{online:false});localStorage.removeItem(KEY);location.reload();}}
 
-// ── BOOT ──
-runWhenFbReady(()=>{
-  window.AUTH.onAuthStateChanged(user=>{
-    if(user){
-      if(!S.name&&user.displayName)S.name=user.displayName;
-      if(!S.avatar&&user.photoURL)S.avatar=user.photoURL;
-      if(!S.authed){S.authed=true;if(!S.daysStart)S.daysStart=Date.now();save();}
-      if(!document.getElementById('sa').classList.contains('active')){
-        document.getElementById('sw').classList.remove('active');
-        document.getElementById('sa').classList.add('active');
-        msgs=S.messages||{};fbSetup();renderAll();
-      }
-    }
-  });
-});
+// ── BOOT — persistent login ──
 if(S.authed){
   document.getElementById('sw').classList.remove('active');
   document.getElementById('sa').classList.add('active');
