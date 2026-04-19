@@ -9,6 +9,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
   import { getDatabase, ref, set, get, update, onValue, onChildAdded, push, onDisconnect } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-database.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDM2jU6NsjL2UMTSmrBv93S13Sc62eDCAU",
@@ -23,6 +24,8 @@
 
   const app = initializeApp(firebaseConfig);
   const database = getDatabase(app);
+  const auth = getAuth(app);
+  const googleProvider = new GoogleAuthProvider();
 
   window.FB = {
     ref: (path) => ref(database, path),
@@ -34,6 +37,29 @@
     onChildAdded: (r, cb) => onChildAdded(r, cb),
     onDisconnect: (r) => onDisconnect(r),
   };
+
+  // Google sign-in
+  window.doGoogleSignIn = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+      window._googleUser = { name: user.displayName, avatar: user.photoURL, uid: user.uid };
+      if(window._fbQueue) {} // already ready
+      window._onGoogleSignIn && window._onGoogleSignIn(window._googleUser);
+    } catch(e) {
+      console.error('Google sign-in error', e);
+      alert('Google sign-in failed: ' + e.message);
+    }
+  };
+
+  // Auth state — restores session on reload
+  onAuthStateChanged(auth, user => {
+    if(user && window._onAuthRestore) {
+      window._onAuthRestore({ name: user.displayName, avatar: user.photoURL, uid: user.uid });
+    }
+  });
+
+  window.doGoogleSignOut = () => signOut(auth).catch(()=>{});
 
   window.fbReady = true;
   console.log("✅ Firebase module ready");
@@ -159,6 +185,7 @@ input[type=file]{display:none}
 .avst .avx:first-child{margin-left:0}.avst .avx img{width:100%;height:100%;object-fit:cover}
 .dtag{display:inline-flex;align-items:center;gap:.2rem;border-radius:50px;background:oklch(0.78 0.18 175/0.9);padding:.1rem .55rem;font-size:.65rem;font-weight:700;color:oklch(0.13 0.02 310)}
 .ntag{border-radius:50px;border:1px solid rgba(255,255,255,.4);padding:.1rem .55rem;font-size:.65rem;color:rgba(255,255,255,.8)}
+.itag{border-radius:50px;border:1px solid oklch(0.82 0.16 85/0.7);padding:.1rem .55rem;font-size:.65rem;color:var(--gold);background:oklch(0.82 0.16 85/0.12)}
 .grad-rose{background:var(--grad-rose)}.grad-peach{background:var(--grad-peach)}.grad-violet{background:var(--grad-violet)}
 .grad-gold{background:var(--grad-gold)}.grad-mint{background:var(--grad-mint)}.grad-cyan{background:var(--grad-cyan)}
 .grad-magenta{background:var(--grad-magenta)}.grad-lav{background:var(--grad-lav)}
@@ -235,9 +262,10 @@ input[type=file]{display:none}
 .dtitle{font-size:.875rem;font-weight:500;margin-bottom:.65rem}
 .msgs{display:flex;flex-direction:column;gap:.4rem;max-height:10rem;overflow-y:auto;margin-bottom:.65rem}
 .msgs::-webkit-scrollbar{display:none}
-.bub{max-width:82%;border-radius:1rem;padding:.4rem .75rem;font-size:.75rem;line-height:1.4}
-.bub.me{background:var(--rose);color:oklch(0.13 0.02 310);align-self:flex-end;border-bottom-right-radius:.25rem}
-.bub.pt{border:1px solid oklch(0.78 0.18 200/0.4);background:oklch(0.78 0.18 200/0.15);color:var(--fg);align-self:flex-start;border-bottom-left-radius:.25rem}
+.bub{max-width:75%;border-radius:1rem;padding:.5rem .85rem;font-size:.75rem;line-height:1.5}
+.bub.me{background:var(--rose);color:oklch(0.13 0.02 310);align-self:flex-end;border-bottom-right-radius:.25rem;text-align:right}
+.bub.pt{border:1px solid oklch(0.78 0.18 200/0.4);background:oklch(0.78 0.18 200/0.15);color:var(--fg);align-self:flex-start;border-bottom-left-radius:.25rem;text-align:left}
+.bname{display:block;font-size:.6rem;opacity:.65;margin-bottom:.2rem;font-weight:600}
 .emsg{text-align:center;font-size:.75rem;color:var(--muted);padding:.75rem}
 .crow2{display:flex;gap:.5rem}
 .cinput{flex:1;border-radius:50px;border:1.5px solid oklch(0.45 0.18 350/0.4);background:oklch(0.13 0.02 310/0.6);padding:.55rem 1rem;font-size:.8rem;color:var(--fg);font-family:var(--fd);outline:none;transition:border-color .2s}
@@ -279,6 +307,7 @@ input[type=file]{display:none}
   <p class="w-sub">Your couple quiz book — now synced in real time 💕</p>
   <div class="wbtns">
     <button class="btn btn-r" onclick="openM('am','signup')">✨ Create account</button>
+    <button class="btn btn-c" onclick="doGoogle()" id="googlebtn">🔍 Continue with Google</button>
     <button class="btn-g" onclick="openM('am','login')">Already have an account? Sign in</button>
   </div>
 </div>
@@ -456,6 +485,15 @@ function fbListenPartner(code){
       if(banner)banner.style.display=S.partnerOnline?'block':'none';
       if(pn)pn.textContent=S.partnerName||'Partner';
     });
+    // Listen for partner completing quizzes — updates their _done flags
+    FB.onValue(FB.ref('answers/'+code),snap=>{
+      const all=snap.val()||{};
+      const ptDone=Object.keys(all).filter(qid=>all[qid]&&all[qid]['_done']).map(Number);
+      S.partnerCompleted=ptDone;
+      save();
+      renderQList(activeTopic);
+      renderActivities();
+    });
   });
 }
 
@@ -587,18 +625,49 @@ function renderAuth(t){
     <div class="field"><label>Email</label><input type="email" id="semail" placeholder="you@example.com"></div>
     <div class="field"><label>Password</label><input type="password" id="spw" placeholder="••••••••"></div>
     <button class="btn btn-r" onclick="doSignup()" style="margin-top:.5rem">Create account ✨</button>
+    <button class="btn btn-c" onclick="doGoogle()" id="mgooglebtn" style="margin-top:.5rem">🔍 Continue with Google</button>
     <button class="btn-g" onclick="renderAuth('login')" style="display:block;text-align:center;margin-top:.75rem;width:100%">Already have an account? Sign in</button>`;
   } else {
     c.innerHTML=`<div class="handle"></div><h2 class="mtitle">Welcome back 💕</h2>
     <div class="field"><label>Email</label><input type="email" placeholder="you@example.com"></div>
     <div class="field"><label>Password</label><input type="password" placeholder="••••••••"></div>
     <button class="btn btn-r" onclick="doLogin()" style="margin-top:.5rem">Sign in ✨</button>
+    <button class="btn btn-c" onclick="doGoogle()" id="mgooglebtn" style="margin-top:.5rem">🔍 Continue with Google</button>
     <button class="btn-g" onclick="renderAuth('signup')" style="display:block;text-align:center;margin-top:.75rem;width:100%">Don't have an account? Sign up</button>`;
   }
 }
 function prevSAv(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{sapAv=ev.target.result;const c=document.getElementById('savc');c.innerHTML=`<img src="${ev.target.result}"><div class="cam-b">📷</div><input type="file" id="sav" accept="image/*" onchange="prevSAv(event)">`};r.readAsDataURL(f)}
 function doSignup(){const n=document.getElementById('sname').value.trim();if(!n){alert('Please enter your name!');return}S.name=n;S.avatar=sapAv||'';S.authed=true;if(!S.daysStart)S.daysStart=Date.now();save();closeM('am');launch()}
 function doLogin(){S.authed=true;if(!S.daysStart)S.daysStart=Date.now();save();closeM('am');launch()}
+
+// ── GOOGLE SIGN IN ──
+function doGoogle(){
+  const btn=document.getElementById('googlebtn');
+  if(btn){btn.textContent='⏳ Signing in...';btn.disabled=true;}
+  // Also handle inside modal
+  const mbtn=document.getElementById('mgooglebtn');
+  if(mbtn){mbtn.textContent='⏳ Signing in...';mbtn.disabled=true;}
+  window._onGoogleSignIn=(user)=>{
+    applyGoogleUser(user);
+    closeM('am');
+    launch();
+  };
+  window.doGoogleSignIn();
+}
+function applyGoogleUser(user){
+  if(user.name&&!S.name)S.name=user.name;
+  if(user.avatar&&!S.avatar)S.avatar=user.avatar;
+  S.authed=true;
+  if(!S.daysStart)S.daysStart=Date.now();
+  save();
+}
+
+// Auth restore on page reload (Firebase remembers the session)
+window._onAuthRestore=(user)=>{
+  if(S.authed)return; // already launched via localStorage
+  applyGoogleUser(user);
+  launch();
+};
 
 function launch(){
   document.getElementById('sw').classList.remove('active');
@@ -667,8 +736,16 @@ function avHTML(src,name,size=100){return src?`<img src="${src}" style="width:${
 function renderQList(tid){
   const list=tid?QUIZZES.filter(q=>q.topic===tid):QUIZZES;
   document.getElementById('qlist').innerHTML=list.map(q=>{
-    const f=FMT[q.fmt];const done=S.completed.includes(q.id);const g=TGRAD[q.topic]||'rose';
-    return`<div class="qcard grad-${g}" onclick="startQ(${q.id})">
+    const f=FMT[q.fmt];
+    const g=TGRAD[q.topic]||'rose';
+    const myDone=S.completed.includes(q.id);
+    const ptDone=(S.partnerCompleted||[]).includes(q.id);
+    const bothDone=myDone&&ptDone;
+    const inProgress=myDone&&!ptDone;
+    let tag=bothDone?'<span class="dtag">✓ Done</span>':inProgress?'<span class="itag">⏳ In progress</span>':'<span class="ntag">New</span>';
+    // If I already did it, clicking opens review instead of restarting
+    const click=myDone?`openMyReview(${q.id})`:`startQ(${q.id})`;
+    return`<div class="qcard grad-${g}" onclick="${click}">
       <div class="cyber"></div><div class="qblob"></div>
       <div class="qem">${q.emoji}</div>
       <div class="qi"><div class="qn">${q.name}</div>
@@ -676,10 +753,27 @@ function renderQList(tid){
       </div>
       <div class="qr">
         <div class="avst"><div class="avx">${avHTML(S.avatar,S.name)}</div><div class="avx">${avHTML(S.partnerAvatar,S.partnerName)}</div></div>
-        ${done?'<span class="dtag">✓ Done</span>':'<span class="ntag">New</span>'}
+        ${tag}
       </div>
     </div>`;
   }).join('');
+}
+
+// Open review for a quiz I already completed — fetch partner answers from Firebase first
+function openMyReview(id){
+  const entry=(S.quizHistory||[]).find(e=>e.id===id);
+  if(!entry)return;
+  if(!S.paired||!S.pairedCode){reviewQuiz(entry);return;}
+  // Fetch latest partner answers from Firebase before showing review
+  runWhenFbReady(()=>{
+    FB.get(FB.ref('answers/'+S.pairedCode+'/'+id)).then(snap=>{
+      const ptData=snap.val()||{};
+      // Merge into entry — overwrite ptA with real Firebase answers
+      const merged={...entry};
+      merged.ptA=entry.qs.map((_,i)=>ptData[i]!==undefined?ptData[i]:null);
+      reviewQuiz(merged);
+    }).catch(()=>reviewQuiz(entry));
+  });
 }
 
 function showTab(t){
@@ -688,8 +782,7 @@ function showTab(t){
     document.getElementById('tab-'+x).style.display=x===t?'block':'none';
     document.getElementById('n-'+x).classList.toggle('active',x===t);
   });
-  if(t==='discuss'){renderDiscuss();// Start listening to all quiz chats
-    (S.quizHistory||[]).forEach(r=>fbListenChat(r.id,renderDiscuss));}
+  if(t==='discuss'){renderDiscuss();(S.quizHistory||[]).forEach(r=>fbListenChat(r.id,renderDiscuss));}
   if(t==='profile')renderProfile();
   if(t==='activities')renderActivities();
 }
@@ -703,30 +796,32 @@ function renderActivities(){
   }
   el.innerHTML=h.map((r,idx)=>{
     const g=TGRAD[QUIZZES.find(q=>q.id===r.id)?.topic]||'rose';
-    return`<div class="qcard grad-${g}" style="margin-bottom:.75rem" onclick="openReview(${idx})">
+    const ptDone=(S.partnerCompleted||[]).includes(r.id);
+    const tag=ptDone?`<span class="dtag">${r.pct}% 💕</span>`:'<span class="itag">⏳ Waiting for partner</span>';
+    return`<div class="qcard grad-${g}" style="margin-bottom:.75rem" onclick="openMyReview(${r.id})">
       <div class="cyber"></div><div class="qblob"></div>
       <div class="qem">${r.emoji}</div>
       <div class="qi"><div class="qn">${r.name}</div>
         <div class="qm"><span class="ftag">${new Date(r.date).toLocaleDateString()}</span></div>
       </div>
-      <div class="qr"><span class="dtag">${r.pct}% 💕</span></div>
+      <div class="qr">${tag}</div>
     </div>`;
   }).join('');
 }
-function openReview(idx){const entry=(S.quizHistory||[])[idx];if(entry)reviewQuiz(entry);}
+function openReview(idx){const entry=(S.quizHistory||[])[idx];if(entry)openMyReview(entry.id);}
 
 // ── QUIZ PLAY ──
 function startQ(id){
   CQ=QUIZZES.find(q=>q.id===id);if(!CQ)return;
   CQi=0;myA=[];ptA=[];ptLiveAnswers={};CQs=CQ.qs;
+  // Clear MY previous answers in Firebase so partner doesn't see stale data
+  if(S.pairCode)runWhenFbReady(()=>{FB.set(FB.ref('answers/'+S.pairCode+'/'+id),null).catch(()=>{});});
   document.getElementById('sa').classList.remove('active');document.getElementById('sp').classList.add('active');
   document.getElementById('pttitle').textContent=CQ.emoji+' '+CQ.name;
-  // Start listening for partner answers in real time
   if(S.paired&&S.pairedCode)fbListenPartnerAnswers(CQ.id);
   fbListenChat(CQ.id,()=>{const el=document.getElementById('fmsgs');if(el)renderFMsgs();});
   renderQ();
 }
-
 function renderQ(){
   const q=CQs[CQi],total=CQs.length,fmt=CQ.fmt;
   document.getElementById('pfill').style.width=Math.round((CQi/total)*100)+'%';
@@ -853,46 +948,74 @@ function showReveal(my,pt){
 function nextQ(){CQi++;if(CQi>=CQs.length)finishQ();else{ptLiveAnswers={};renderQ();}}
 
 function finishQ(){
-  const matched=myA.filter((a,i)=>a===ptA[i]).length;
-  const pct=Math.round((matched/myA.length)*100);
-  if(!S.completed.includes(CQ.id))S.completed.push(CQ.id);
-  S.streak=(S.streak||0)+1;S.matchScore=pct;
   const myName=S.name||'You';
   const ptName=S.partnerName||'Partner';
+  // Only count match for answers where partner actually responded
+  const matched=myA.filter((a,i)=>ptA[i]!==null&&ptA[i]!==undefined&&a===ptA[i]).length;
+  const answered=ptA.filter(a=>a!==null&&a!==undefined).length;
+  const pct=answered>0?Math.round((matched/answered)*100):0;
+  if(!S.completed.includes(CQ.id))S.completed.push(CQ.id);
+  S.streak=(S.streak||0)+1;
+  if(answered===CQs.length)S.matchScore=pct;
+  // Write my completion to Firebase so partner's app knows
+  fbWriteMyAnswer(CQ.id,'_done',true);
   const entry={id:CQ.id,name:CQ.name,emoji:CQ.emoji,fmt:CQ.fmt,date:Date.now(),matched,total:myA.length,pct,myA:[...myA],ptA:[...ptA],qs:[...CQs],myName,ptName};
-  S.quizHistory=[entry,...(S.quizHistory||[])].slice(0,50);
+  // Update existing entry if already done this quiz, else prepend
+  const existIdx=(S.quizHistory||[]).findIndex(e=>e.id===CQ.id);
+  if(existIdx>=0)S.quizHistory[existIdx]=entry;
+  else S.quizHistory=[entry,...(S.quizHistory||[])].slice(0,50);
   if(!msgs[CQ.id])msgs[CQ.id]=[];S.messages=msgs;save();
   document.getElementById('pfill').style.width='100%';
-  const items=CQs.map((q,i)=>{
+  buildResultsScreen(entry,true);
+}
+
+function buildResultsScreen(entry,showChat){
+  const myName=entry.myName||S.name||'You';
+  const ptName=entry.ptName||S.partnerName||'Partner';
+  const ptAnswered=entry.ptA.filter(a=>a!==null&&a!==undefined).length;
+  const matched=entry.myA.filter((a,i)=>entry.ptA[i]!==null&&entry.ptA[i]!==undefined&&a===entry.ptA[i]).length;
+  const pct=ptAnswered>0?Math.round((matched/ptAnswered)*100):0;
+  const items=entry.qs.map((q,i)=>{
     const ql=Array.isArray(q)?q.join(' OR '):q;
-    const same=String(myA[i])===String(ptA[i]);
-    return`<div class="aitem"><div class="aq">${ql.length>60?ql.slice(0,60)+'…':ql}</div>
+    const myAns=String(entry.myA[i]||'—').slice(0,30);
+    const ptAns=entry.ptA[i]!==null&&entry.ptA[i]!==undefined?String(entry.ptA[i]).slice(0,30):'No answer yet';
+    const same=entry.ptA[i]!==null&&entry.ptA[i]!==undefined&&String(entry.myA[i])===String(entry.ptA[i]);
+    return`<div class="aitem"><div class="aq">${ql.length>65?ql.slice(0,65)+'…':ql}</div>
     <div class="achips">
-      <span class="achip ${same?'m':'d'}">${myName}: ${String(myA[i]||'—').slice(0,30)}</span>
-      <span class="achip p">${ptName}: ${String(ptA[i]!==undefined?ptA[i]:'—').slice(0,30)}</span>
+      <span class="achip m">${myName}: ${myAns}</span>
+      <span class="achip ${same?'m':'p'}">${ptName}: ${ptAns}</span>
     </div></div>`;
   }).join('');
-  document.getElementById('pbody').innerHTML=`<div class="finwrap">
-    <span class="finem">${pct>=80?'💞':pct>=50?'💛':'💙'}</span>
-    <div class="finpct">${pct}% match!</div>
-    <p class="finsub">${matched} of ${myA.length} answers aligned${pct>=80?' — perfectly in sync! 🎉':pct>=50?' — great connection!':', beautifully different!'}</p>
-    <div class="acard"><div class="albl">All answers</div>${items}</div>
-    <div class="dcard"><div class="dtitle">💬 Discuss this quiz</div>
+  const matchLine=ptAnswered===entry.qs.length
+    ?`${pct}% match!`
+    :`${ptAnswered}/${entry.qs.length} answers from ${ptName}`;
+  const subLine=ptAnswered===entry.qs.length
+    ?`${matched} of ${ptAnswered} aligned${pct>=80?' — perfectly in sync! 🎉':pct>=50?' — great connection!':', beautifully different!'}`
+    :`Waiting for ${ptName} to finish the quiz`;
+  const chatHtml=showChat?`<div class="dcard"><div class="dtitle">💬 Discuss this quiz</div>
       <div class="msgs" id="fmsgs" style="display:flex;flex-direction:column;gap:.4rem"></div>
       <div class="crow2"><input class="cinput" id="finp" placeholder="Share your thoughts..." onkeydown="if(event.key==='Enter')sendFin()">
       <button class="csend" onclick="sendFin()">➤</button></div>
-    </div>
+    </div>`:'';
+  document.getElementById('pbody').innerHTML=`<div class="finwrap">
+    <span class="finem">${ptAnswered===entry.qs.length?(pct>=80?'💞':pct>=50?'💛':'💙'):'⏳'}</span>
+    <div class="finpct">${matchLine}</div>
+    <p class="finsub">${subLine}</p>
+    <div class="acard"><div class="albl">All answers</div>${items}</div>
+    ${chatHtml}
     <button class="btn btn-r" onclick="exitPlay()" style="margin-top:.5rem">Back to quizzes 💕</button>
   </div>`;
-  renderFMsgs();
+  if(showChat)renderFMsgs();
 }
 
 function renderFMsgs(){
   const el=document.getElementById('fmsgs');if(!el||!CQ)return;
   const m=(msgs||{})[CQ.id]||[];
-  el.innerHTML=m.length?m.map(mg=>`<div class="bub ${mg.isMe?'me':'pt'}">
-    <span style="font-size:.6rem;opacity:.6">${mg.isMe?(S.name||'You'):(mg.senderName||S.partnerName||'Partner')}</span><br>${mg.text}
-  </div>`).join(''):'<div class="emsg">Start the conversation! 💬</div>';
+  el.innerHTML=m.length?m.map(mg=>{
+    const side=mg.isMe?'me':'pt';
+    const name=mg.isMe?(S.name||'You'):(mg.senderName||S.partnerName||'Partner');
+    return`<div class="bub ${side}"><span class="bname">${name}</span>${mg.text}</div>`;
+  }).join(''):'<div class="emsg">Start the conversation! 💬</div>';
   el.scrollTop=el.scrollHeight;
 }
 function sendFin(){
@@ -912,28 +1035,10 @@ function sendFin(){
 function reviewQuiz(entry){
   CQ=QUIZZES.find(q=>q.id===entry.id);if(!CQ)return;
   CQs=entry.qs;myA=entry.myA;ptA=entry.ptA;
-  const pct=entry.pct,matched=entry.matched;
-  const myName=entry.myName||S.name||'You';
-  const ptName=entry.ptName||S.partnerName||'Partner';
   document.getElementById('sa').classList.remove('active');document.getElementById('sp').classList.add('active');
   document.getElementById('pttitle').textContent=CQ.emoji+' '+CQ.name+' — Results';
   document.getElementById('pfill').style.width='100%';
-  const items=CQs.map((q,i)=>{
-    const ql=Array.isArray(q)?q.join(' OR '):q;
-    const same=String(myA[i])===String(ptA[i]);
-    return`<div class="aitem"><div class="aq">${ql.slice(0,70)}</div>
-    <div class="achips">
-      <span class="achip ${same?'m':'d'}">${myName}: ${String(myA[i]||'—').slice(0,30)}</span>
-      <span class="achip p">${ptName}: ${String(ptA[i]!==undefined?ptA[i]:'—').slice(0,30)}</span>
-    </div></div>`;
-  }).join('');
-  document.getElementById('pbody').innerHTML=`<div class="finwrap">
-    <span class="finem">${pct>=80?'💞':pct>=50?'💛':'💙'}</span>
-    <div class="finpct">${pct}% match!</div>
-    <p class="finsub">${matched} of ${myA.length} answers aligned · <span style="color:var(--muted);font-size:.8rem">${new Date(entry.date).toLocaleDateString()}</span></p>
-    <div class="acard"><div class="albl">All answers</div>${items}</div>
-    <button class="btn btn-r" onclick="exitPlay()">← Back</button>
-  </div>`;
+  buildResultsScreen(entry,false);
 }
 function exitPlay(){document.getElementById('sp').classList.remove('active');document.getElementById('sa').classList.add('active');showTab('home');renderAll();}
 
@@ -950,9 +1055,11 @@ function renderDiscuss(){
         <span style="font-family:var(--fm);font-size:.65rem;text-transform:uppercase;color:var(--muted)">${m.length} msg</span>
       </div>
       <div class="msgs" style="display:flex;flex-direction:column;gap:.35rem">
-        ${m.length?m.map(mg=>`<div class="bub ${mg.isMe?'me':'pt'}" style="font-size:.72rem">
-          <span style="font-size:.6rem;opacity:.6">${mg.isMe?(S.name||'You'):(mg.senderName||S.partnerName||'Partner')}</span><br>${mg.text}
-        </div>`).join(''):'<div class="emsg" style="font-size:.72rem">No messages yet</div>'}
+        ${m.length?m.map(mg=>{
+          const side=mg.isMe?'me':'pt';
+          const name=mg.isMe?(S.name||'You'):(mg.senderName||S.partnerName||'Partner');
+          return`<div class="bub ${side}" style="font-size:.72rem"><span class="bname">${name}</span>${mg.text}</div>`;
+        }).join(''):'<div class="emsg" style="font-size:.72rem">No messages yet</div>'}
       </div>
       <div class="crow2" style="margin-top:.5rem">
         <input class="cinput" id="dc${r.id}" placeholder="Add a comment..." style="font-size:.75rem" onkeydown="if(event.key==='Enter')sendDC(${r.id})">
@@ -999,7 +1106,7 @@ function editName(){const n=prompt('Your name:',S.name||'');if(n?.trim()){S.name
 function editStatus(){const s=prompt('What\'s your vibe right now?',S.status||'');if(s!==null){S.status=s.trim().slice(0,80);save();fbUpdate('users/'+S.pairCode,{status:S.status});renderProfile();}}
 function editDate(){const cur=S.daysStart?new Date(S.daysStart).toISOString().slice(0,10):'';const v=prompt('When did your love story start? (YYYY-MM-DD)',cur);if(!v)return;const t=Date.parse(v);if(!isNaN(t)){S.daysStart=t;save();renderAll();}}
 function installW(){alert('📱 Add to home screen:\n• iPhone: Share → "Add to Home Screen"\n• Android: Menu → "Add to Home Screen"')}
-function resetAll(){if(confirm('Sign out and reset all data?')){fbUpdate('users/'+S.pairCode,{online:false});localStorage.removeItem(KEY);location.reload();}}
+function resetAll(){if(confirm('Sign out and reset all data?')){fbUpdate('users/'+S.pairCode,{online:false});localStorage.removeItem(KEY);if(window.doGoogleSignOut)window.doGoogleSignOut();location.reload();}}
 
 // ── BOOT — persistent login ──
 if(S.authed){
